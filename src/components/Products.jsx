@@ -24,7 +24,7 @@ const Products = () => {
   useEffect(() => {
     const getProducts = async () => {
       setLoading(true);
-      const response = await Axios.get(`http://localhost:8000/getProducts`);
+      const response = await Axios.get(`https://ecommerce-for-holo-decor.vercel.app/getProducts`);
       if (componentMounted) {
         setData(response.data);
         setFilter(response.data); // initially show all products

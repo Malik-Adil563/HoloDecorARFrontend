@@ -12,7 +12,7 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:8000/register', { name, email, password });
+      const response = await axios.post('https://ecommerce-for-holo-decor.vercel.app/register', { name, email, password });
       if (response.data && response.data.token) {
         navigate('/login');
       }
