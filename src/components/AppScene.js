@@ -86,29 +86,32 @@ const AppScene = ({ onClose }) => {
   };
 
   const captureSceneAndCheckWall = () => {
-    setMessage("Analyzing scene...");
+  setMessage("Analyzing scene...");
 
-    const imageData = canvasRef.current.toDataURL('image/jpeg');
+  let imageData = canvasRef.current.toDataURL('image/jpeg');
+  imageData = imageData.split(',')[1]; // ✅ Remove "data:image/jpeg;base64," part
 
-    fetch('https://ecommerce-for-holo-decor.vercel.app/detect-wall', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: imageData })
+  fetch('https://ecommerce-for-holo-decor.vercel.app/detect-wall', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ image: imageData })
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      console.log('Server response:', data); // 🧠 Always log
+
+      if (data.wallDetected) {  // ✅ Correct field
+        loadModel();
+        setMessage("Wall detected ✅ Sofa placed.");
+      } else {
+        setMessage("❌ No wall detected. Please try again.");
+      }
     })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.isWall) {
-          loadModel();
-          setMessage("Wall detected ✅ Sofa placed.");
-        } else {
-          setMessage("❌ No wall detected. Please try again.");
-        }
-      })
-      .catch((err) => {
-        console.error(err);
-        setMessage("⚠️ Error analyzing the scene.");
-      });
-  };
+    .catch((err) => {
+      console.error(err);
+      setMessage("⚠️ Error analyzing the scene.");
+    });
+};
 
   const loadModel = () => {
     const loader = new GLTFLoader();
