@@ -6,12 +6,15 @@ import 'webxr-polyfill';
 const AppScene = ({ onClose }) => {
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
-  const [message, setMessage] = useState("Hold camera at the scene for 10 seconds...");
-
+  const [message, setMessage] = useState("Hold camera at the scene...");
   let camera, scene, renderer, controller, model;
+  let captureInterval;
 
   useEffect(() => {
     checkARSupport();
+    return () => {
+      if (captureInterval) clearInterval(captureInterval);
+    };
   }, []);
 
   const checkARSupport = async () => {
@@ -24,8 +27,7 @@ const AppScene = ({ onClose }) => {
     animate();
     startAR();
 
-    // Start capture countdown
-    setTimeout(captureSceneAndCheckWall, 10000);
+    captureInterval = setInterval(captureSceneAndCheckWall, 10000);
   };
 
   const showWarningNotification = (message) => {
@@ -60,9 +62,6 @@ const AppScene = ({ onClose }) => {
   };
 
   const init = () => {
-    const container = document.createElement('div');
-    containerRef.current.appendChild(container);
-
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 40);
 
@@ -70,8 +69,10 @@ const AppScene = ({ onClose }) => {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.xr.enabled = true;
+
+    // ⛔ Don't create new div, directly add canvas to container
     canvasRef.current = renderer.domElement;
-    container.appendChild(canvasRef.current);
+    containerRef.current.appendChild(canvasRef.current);
 
     const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
     light.position.set(0.5, 1, 0.25);
@@ -86,32 +87,33 @@ const AppScene = ({ onClose }) => {
   };
 
   const captureSceneAndCheckWall = () => {
-  setMessage("Analyzing scene...");
+    setMessage("Analyzing scene...");
 
-  let imageData = canvasRef.current.toDataURL('image/jpeg');
-  imageData = imageData.split(',')[1]; // ✅ Remove "data:image/jpeg;base64," part
+    let imageData = canvasRef.current.toDataURL('image/jpeg');
+    imageData = imageData.split(',')[1];
 
-  fetch('https://ecommerce-for-holo-decor.vercel.app/detect-wall', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ image: imageData })
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      console.log('Server response:', data); // 🧠 Always log
-
-      if (data.wallDetected) {  // ✅ Correct field
-        loadModel();
-        setMessage("Wall detected ✅ Sofa placed.");
-      } else {
-        setMessage("❌ No wall detected. Please try again.");
-      }
+    fetch('https://ecommerce-for-holo-decor.vercel.app/detect-wall', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: imageData })
     })
-    .catch((err) => {
-      console.error(err);
-      setMessage("⚠️ Error analyzing the scene.");
-    });
-};
+      .then((res) => res.json())
+      .then((data) => {
+        console.log('Server response:', data);
+
+        if (data.wallDetected) {
+          clearInterval(captureInterval);
+          loadModel();
+          setMessage("Wall detected ✅ Sofa placed.");
+        } else {
+          setMessage("❌ No wall detected. Retrying...");
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setMessage("⚠️ Error analyzing the scene.");
+      });
+  };
 
   const loadModel = () => {
     const loader = new GLTFLoader();
@@ -164,12 +166,18 @@ const AppScene = ({ onClose }) => {
   };
 
   return (
-    <div ref={containerRef} style={{ position: 'relative' }}>
+    <div ref={containerRef} style={{ 
+      position: 'relative',
+      width: '100vw',
+      height: '100vh',
+      overflow: 'hidden',
+    }}>
+      {/* UI overlays */}
       <div style={{
         position: 'absolute',
         top: '10px',
         left: '10px',
-        background: 'rgba(0,0,0,0.7)',
+        background: 'rgba(0,0,0,0.6)',
         color: '#fff',
         padding: '10px 15px',
         borderRadius: '8px',
