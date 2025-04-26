@@ -90,7 +90,7 @@ const AppScene = ({ onClose }) => {
 
     const imageData = canvasRef.current.toDataURL('image/jpeg');
 
-    fetch('https://ecommerce-for-holo-decor.vercel.app/check-wall', {
+    fetch('https://ecommerce-for-holo-decor.vercel.app/detect-wall', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ image: imageData })
