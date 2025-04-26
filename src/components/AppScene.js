@@ -88,7 +88,7 @@ const AppScene = ({ onClose }) => {
   const captureSceneAndCheckWall = () => {
   setMessage("Analyzing scene...");
 
-  const imageData = canvasRef.current.toDataURL('image/jpeg').replace('image/jpeg', 'image/jpg');
+  const imageData = canvasRef.current.toDataURL('image/jpeg');
   imageData = imageData.split(',')[1]; // ✅ Remove "data:image/jpeg;base64," part
 
   fetch('https://ecommerce-for-holo-decor.vercel.app/detect-wall', {
