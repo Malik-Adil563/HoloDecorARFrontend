@@ -5,20 +5,63 @@ import 'webxr-polyfill';
 
 const AppScene = ({ onClose }) => {
   const containerRef = useRef(null);
-  const [sessionStarted, setSessionStarted] = useState(false);
-  const [message, setMessage] = useState('Hold the camera steady for better experience in good lighting.');
-  const [quality, setQuality] = useState('Too Dark'); // Too Dark, Fair, Good
+  const canvasRef = useRef(null);
+  const [message, setMessage] = useState("Hold camera at the scene...");
   let camera, scene, renderer, controller, model;
-  let analysisInterval;
+  let captureInterval;
 
   useEffect(() => {
-    initThreeJS();
+    checkARSupport();
     return () => {
-      if (analysisInterval) clearInterval(analysisInterval);
+      if (captureInterval) clearInterval(captureInterval);
     };
   }, []);
 
-  const initThreeJS = () => {
+  const checkARSupport = async () => {
+    if (!navigator.xr || !(await navigator.xr.isSessionSupported('immersive-ar'))) {
+      showWarningNotification("Your device does not support WebXR.");
+      return;
+    }
+
+    init();
+    animate();
+    startAR();
+
+    captureInterval = setInterval(captureSceneAndCheckWall, 10000);
+  };
+
+  const showWarningNotification = (message) => {
+    if ("Notification" in window) {
+      if (Notification.permission === "granted") {
+        new Notification("⚠️ WebXR Warning", { body: message });
+      } else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then((permission) => {
+          if (permission === "granted") {
+            new Notification("⚠️ WebXR Warning", { body: message });
+          }
+        });
+      }
+    } else {
+      alert(message);
+    }
+  };
+
+  const startAR = async () => {
+    if (navigator.xr) {
+      try {
+        const session = await navigator.xr.requestSession('immersive-ar', {
+          requiredFeatures: ['hit-test'],
+          optionalFeatures: ['local-floor']
+        });
+
+        renderer.xr.setSession(session);
+      } catch (error) {
+        console.error("Failed to start AR session", error);
+      }
+    }
+  };
+
+  const init = () => {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 40);
 
@@ -27,9 +70,12 @@ const AppScene = ({ onClose }) => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.xr.enabled = true;
 
-    containerRef.current.appendChild(renderer.domElement);
+    // ⛔ Don't create new div, directly add canvas to container
+    canvasRef.current = renderer.domElement;
+    containerRef.current.appendChild(canvasRef.current);
 
     const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+    light.position.set(0.5, 1, 0.25);
     scene.add(light);
 
     controller = renderer.xr.getController(0);
@@ -37,100 +83,35 @@ const AppScene = ({ onClose }) => {
     scene.add(controller);
 
     window.addEventListener('resize', onWindowResize, false);
+    window.addEventListener('wheel', onZoom);
   };
 
-  const onWindowResize = () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  };
+  const captureSceneAndCheckWall = () => {
+    setMessage("Analyzing scene...");
 
-  const onSelect = () => {
-    if (model) {
-      const position = new THREE.Vector3();
-      position.set(0, 0, -0.5).applyMatrix4(controller.matrixWorld);
-      model.position.copy(position);
-    }
-  };
-
-  const startARSession = async () => {
-    if (navigator.xr) {
-      try {
-        const session = await navigator.xr.requestSession('immersive-ar', {
-          requiredFeatures: ['hit-test'],
-          optionalFeatures: ['local-floor']
-        });
-        renderer.xr.setSession(session);
-        setSessionStarted(true);
-        animate();
-        startSceneAnalysis();
-      } catch (error) {
-        console.error('Failed to start AR session', error);
-      }
-    }
-  };
-
-  const animate = () => {
-    renderer.setAnimationLoop(() => {
-      renderer.render(scene, camera);
-    });
-  };
-
-  const startSceneAnalysis = () => {
-    analysisInterval = setInterval(() => {
-      try {
-        const gl = renderer.getContext();
-        const pixels = new Uint8Array(4);
-        gl.readPixels(
-          renderer.domElement.width / 2,
-          renderer.domElement.height / 2,
-          1, 1,
-          gl.RGBA,
-          gl.UNSIGNED_BYTE,
-          pixels
-        );
-        const brightness = (pixels[0] + pixels[1] + pixels[2]) / 3;
-        if (brightness < 40) {
-          setQuality('Too Dark');
-        } else if (brightness < 100) {
-          setQuality('Fair');
-        } else {
-          setQuality('Good');
-        }
-
-        if (quality === 'Good' || quality === 'Fair') {
-          captureAndDetect();
-          clearInterval(analysisInterval);
-        }
-      } catch (err) {
-        console.error('Error analyzing scene:', err);
-      }
-    }, 1000);
-  };
-
-  const captureAndDetect = () => {
-    let imageData = renderer.domElement.toDataURL('image/jpeg').split(',')[1];
+    let imageData = canvasRef.current.toDataURL('image/jpeg');
+    imageData = imageData.split(',')[1];
 
     fetch('https://ecommerce-for-holo-decor.vercel.app/detect-wall', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ image: imageData })
     })
-      .then(res => res.json())
-      .then(data => {
-        console.log('Wall detection response:', data);
+      .then((res) => res.json())
+      .then((data) => {
+        console.log('Server response:', data);
+
         if (data.wallDetected) {
+          clearInterval(captureInterval);
           loadModel();
-          setMessage('Wall detected ✅ Sofa placed.');
+          setMessage("Wall detected ✅ Sofa placed.");
         } else {
-          setMessage('❌ No wall detected. Please reposition.');
-          startSceneAnalysis();
+          setMessage("❌ No wall detected. Retrying...");
         }
       })
-      .catch(err => {
-        console.error('Error sending to backend:', err);
-        setMessage('⚠️ Error analyzing the scene.');
-        startSceneAnalysis();
+      .catch((err) => {
+        console.error(err);
+        setMessage("⚠️ Error analyzing the scene.");
       });
   };
 
@@ -149,91 +130,78 @@ const AppScene = ({ onClose }) => {
     );
   };
 
+  const onSelect = () => {
+    if (model) {
+      const position = new THREE.Vector3();
+      position.set(0, 0, -0.5).applyMatrix4(controller.matrixWorld);
+      model.position.copy(position);
+
+      const originalScale = model.scale.clone();
+      const originalRotation = model.rotation.clone();
+
+      model.quaternion.setFromRotationMatrix(controller.matrixWorld);
+      model.rotation.copy(originalRotation);
+      model.scale.copy(originalScale);
+    }
+  };
+
+  const onZoom = (event) => {
+    if (model) {
+      const zoomFactor = 1 - event.deltaY * 0.001;
+      const newScale = model.scale.clone().multiplyScalar(zoomFactor);
+      if (newScale.x > 0.01 && newScale.x < 1) {
+        model.scale.copy(newScale);
+      }
+    }
+  };
+
+  const onWindowResize = () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  };
+
+  const animate = () => {
+    renderer.setAnimationLoop(() => renderer.render(scene, camera));
+  };
+
   return (
-    <div ref={containerRef} style={{
+    <div ref={containerRef} style={{ 
       position: 'relative',
       width: '100vw',
       height: '100vh',
       overflow: 'hidden',
     }}>
-      {/* Message */}
-      {sessionStarted && (
-        <div style={{
-          position: 'absolute',
-          top: '10px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'rgba(0,0,0,0.6)',
-          color: '#fff',
-          padding: '8px 12px',
-          borderRadius: '8px',
-          fontSize: '15px',
-          zIndex: 1000
-        }}>
-          {message}
-        </div>
-      )}
+      {/* UI overlays */}
+      <div style={{
+        position: 'absolute',
+        top: '10px',
+        left: '10px',
+        background: 'rgba(0,0,0,0.6)',
+        color: '#fff',
+        padding: '10px 15px',
+        borderRadius: '8px',
+        fontSize: '16px',
+        zIndex: 1000
+      }}>
+        {message}
+      </div>
 
-      {/* Close Button */}
-      {sessionStarted && (
-        <button onClick={onClose} style={{
-          position: 'absolute',
-          top: '10px',
-          right: '10px',
-          background: 'red',
-          color: 'white',
-          border: 'none',
-          padding: '10px',
-          fontSize: '16px',
-          cursor: 'pointer',
-          borderRadius: '50%',
-          zIndex: 1000
-        }}>
-          ✕
-        </button>
-      )}
-
-      {/* Gauge */}
-      {sessionStarted && (
-        <div style={{
-          position: 'absolute',
-          right: '15px',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          height: '150px',
-          width: '30px',
-          background: '#ddd',
-          borderRadius: '15px',
-          overflow: 'hidden',
-          zIndex: 1000
-        }}>
-          <div style={{
-            height: '50%',
-            background: quality === 'Good' ? 'green' : (quality === 'Fair' ? 'orange' : 'red'),
-            transition: 'background 0.5s',
-          }} />
-        </div>
-      )}
-
-      {/* Confirm Button */}
-      {!sessionStarted && (
-        <button onClick={startARSession} style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: '#007bff',
-          color: 'white',
-          padding: '15px 25px',
-          fontSize: '18px',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          zIndex: 1000
-        }}>
-          Confirm & Start Camera
-        </button>
-      )}
+      <button onClick={onClose} style={{
+        position: 'absolute',
+        top: '10px',
+        right: '10px',
+        background: 'red',
+        color: 'white',
+        border: 'none',
+        padding: '10px',
+        fontSize: '16px',
+        cursor: 'pointer',
+        zIndex: 1000,
+        borderRadius: '50%',
+      }}>
+        ✕
+      </button>
     </div>
   );
 };
