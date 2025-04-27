@@ -33,7 +33,7 @@ const AppScene = ({ onClose }) => {
     init();
     animate();
     startAR();
-    captureInterval = setInterval(captureSceneAndCheckWall, 4000); // check every 4s
+    captureInterval = setInterval(captureSceneAndCheckWall, 4000);
   };
 
   const showWarningNotification = (message) => {
@@ -75,8 +75,7 @@ const AppScene = ({ onClose }) => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.xr.enabled = true;
 
-    canvasRef.current = renderer.domElement;
-    containerRef.current.appendChild(canvasRef.current);
+    canvasRef.current.appendChild(renderer.domElement);
 
     const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
     light.position.set(0.5, 1, 0.25);
@@ -98,8 +97,8 @@ const AppScene = ({ onClose }) => {
 
     setMessage("Analyzing scene...");
 
-    let imageData = canvasRef.current.toDataURL('image/jpeg');
-    imageData = imageData.split(',')[1];
+    const canvasElement = canvasRef.current.querySelector('canvas');
+    let imageData = canvasElement.toDataURL('image/jpeg').split(',')[1];
 
     fetch('https://ecommerce-for-holo-decor.vercel.app/detect-wall', {
       method: 'POST',
@@ -125,8 +124,11 @@ const AppScene = ({ onClose }) => {
   };
 
   const checkSceneQuality = () => {
-    const context = canvasRef.current.getContext('2d');
-    const imgData = context.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
+    const canvasElement = canvasRef.current.querySelector('canvas');
+    const context = canvasElement.getContext('2d');
+    if (!context) return false;
+
+    const imgData = context.getImageData(0, 0, canvasElement.width, canvasElement.height);
     const pixels = imgData.data;
 
     let brightnessSum = 0;
@@ -200,7 +202,6 @@ const AppScene = ({ onClose }) => {
     renderer.setAnimationLoop(() => renderer.render(scene, camera));
   };
 
-  // 🧠 MAIN RENDER:
   if (showIntro) {
     return (
       <div style={{
@@ -232,70 +233,12 @@ const AppScene = ({ onClose }) => {
   }
 
   return (
-    <div ref={containerRef} style={{
-      position: 'relative',
-      width: '100vw',
-      height: '100vh',
-      overflow: 'hidden',
-      background: 'black'
-    }}>
-      {/* Gauge UI */}
+    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+      <div ref={canvasRef} style={{ width: '100%', height: '100%' }}></div>
+
+      {/* UI overlay */}
       {cameraActive && (
         <>
-          {/* Gauge Meter */}
-          <div style={{
-            position: 'absolute',
-            top: '30%',
-            right: '20px',
-            width: '100px',
-            height: '100px',
-            background: 'rgba(0,0,0,0.5)',
-            borderRadius: '50%',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            transform: `rotate(${gaugeRotation}deg)`,
-            transition: 'transform 0.5s ease',
-            zIndex: 1000
-          }}>
-            <div style={{
-              width: '6px',
-              height: '40px',
-              background: 'lime',
-              borderRadius: '3px'
-            }}></div>
-          </div>
-
-          {/* Quality Text */}
-          <div style={{
-            position: 'absolute',
-            top: '60%',
-            right: '20px',
-            background: 'rgba(0,0,0,0.6)',
-            color: '#fff',
-            padding: '8px 12px',
-            borderRadius: '8px',
-            fontSize: '14px',
-            zIndex: 1000
-          }}>
-            {qualityStatus}
-          </div>
-
-          {/* Message Box */}
-          <div style={{
-            position: 'absolute',
-            top: '10px',
-            left: '10px',
-            background: 'rgba(0,0,0,0.6)',
-            color: '#fff',
-            padding: '10px 15px',
-            borderRadius: '8px',
-            fontSize: '16px',
-            zIndex: 1000
-          }}>
-            {message}
-          </div>
-
           {/* Close Button */}
           <button onClick={onClose} style={{
             position: 'absolute',
@@ -305,13 +248,67 @@ const AppScene = ({ onClose }) => {
             color: 'white',
             border: 'none',
             padding: '10px',
-            fontSize: '16px',
+            fontSize: '18px',
             cursor: 'pointer',
-            zIndex: 1000,
             borderRadius: '50%',
+            zIndex: 1000,
           }}>
             ✕
           </button>
+
+          {/* Message */}
+          <div style={{
+            position: 'absolute',
+            top: '10px',
+            left: '10px',
+            background: 'rgba(0,0,0,0.6)',
+            color: 'white',
+            padding: '10px 15px',
+            borderRadius: '8px',
+            fontSize: '16px',
+            zIndex: 1000
+          }}>
+            {message}
+          </div>
+
+          {/* Gauge */}
+          <div style={{
+            position: 'absolute',
+            top: '30%',
+            right: '20px',
+            width: '80px',
+            height: '80px',
+            borderRadius: '50%',
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              width: '5px',
+              height: '40px',
+              backgroundColor: 'lime',
+              transform: `rotate(${gaugeRotation}deg)`,
+              transformOrigin: 'bottom center',
+              transition: 'transform 0.3s ease'
+            }} />
+          </div>
+
+          {/* Quality text */}
+          <div style={{
+            position: 'absolute',
+            top: '55%',
+            right: '20px',
+            background: 'rgba(0,0,0,0.6)',
+            color: 'white',
+            padding: '8px 10px',
+            borderRadius: '8px',
+            fontSize: '14px',
+            zIndex: 1000
+          }}>
+            {qualityStatus}
+          </div>
         </>
       )}
     </div>
