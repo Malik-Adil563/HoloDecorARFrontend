@@ -70,7 +70,6 @@ const AppScene = ({ onClose }) => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.xr.enabled = true;
 
-    // ⛔ Don't create new div, directly add canvas to container
     canvasRef.current = renderer.domElement;
     containerRef.current.appendChild(canvasRef.current);
 
@@ -92,7 +91,7 @@ const AppScene = ({ onClose }) => {
     let imageData = canvasRef.current.toDataURL('image/jpeg');
     imageData = imageData.split(',')[1];
 
-    fetch('https://ecommerce-for-holo-decor.vercel.app/detect-wall', {
+    fetch('https://14cf3993-0a8a-4fcc-a670-81d92d092b65-00-3ib9bcwcj2mzr.sisko.replit.dev/detect-wall', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ image: imageData })
@@ -166,13 +165,12 @@ const AppScene = ({ onClose }) => {
   };
 
   return (
-    <div ref={containerRef} style={{ 
+    <div ref={containerRef} style={{
       position: 'relative',
       width: '100vw',
       height: '100vh',
       overflow: 'hidden',
     }}>
-      {/* UI overlays */}
       <div style={{
         position: 'absolute',
         top: '10px',
