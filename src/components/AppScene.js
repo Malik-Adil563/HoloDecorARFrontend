@@ -5,8 +5,6 @@ import 'webxr-polyfill';
 
 const AppScene = ({ onClose }) => {
   const containerRef = useRef(null);
-  const canvasRef = useRef(null);
-
   const [showIntro, setShowIntro] = useState(true);
   const [cameraActive, setCameraActive] = useState(false);
   const [qualityStatus, setQualityStatus] = useState('Analyzing...');
@@ -75,7 +73,14 @@ const AppScene = ({ onClose }) => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.xr.enabled = true;
 
-    canvasRef.current.appendChild(renderer.domElement);
+    // ATTACH canvas directly to body, not React container
+    document.body.appendChild(renderer.domElement);
+    renderer.domElement.style.position = 'absolute';
+    renderer.domElement.style.top = '0';
+    renderer.domElement.style.left = '0';
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = '100%';
+    renderer.domElement.style.zIndex = 0; // Below all React UI
 
     const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
     light.position.set(0.5, 1, 0.25);
@@ -97,7 +102,7 @@ const AppScene = ({ onClose }) => {
 
     setMessage("Analyzing scene...");
 
-    const canvasElement = canvasRef.current.querySelector('canvas');
+    const canvasElement = renderer.domElement;
     let imageData = canvasElement.toDataURL('image/jpeg').split(',')[1];
 
     fetch('https://ecommerce-for-holo-decor.vercel.app/detect-wall', {
@@ -124,7 +129,7 @@ const AppScene = ({ onClose }) => {
   };
 
   const checkSceneQuality = () => {
-    const canvasElement = canvasRef.current.querySelector('canvas');
+    const canvasElement = renderer.domElement;
     const context = canvasElement.getContext('2d');
     if (!context) return false;
 
@@ -233,9 +238,7 @@ const AppScene = ({ onClose }) => {
   }
 
   return (
-    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
-      <div ref={canvasRef} style={{ width: '100%', height: '100%' }}></div>
-
+    <div ref={containerRef} style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', zIndex: 1 }}>
       {/* UI overlay */}
       {cameraActive && (
         <>
