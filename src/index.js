@@ -7,7 +7,7 @@ import { Provider } from 'react-redux';
 import store from './redux/store';
 import 'aos/dist/aos.css';
 
-import { Home, Product, Products, AboutPage, ContactPage, Cart, Login, Register, Checkout, PageNotFound } from "./pages";
+import { Home, Product, Products, AboutPage, ContactPage, Cart, Login, Register, Checkout, PageNotFound, BlogPage } from "./pages";
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -27,6 +27,7 @@ const App = () => {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="*" element={<PageNotFound />} />
           <Route path="/product/*" element={<PageNotFound />} />
+          <Route path="/blog" element={<BlogPage />} />
         </Routes>
       </Provider>
     </BrowserRouter>

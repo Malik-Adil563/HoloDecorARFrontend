@@ -1,0 +1,130 @@
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+
+const Footer = () => {
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
+  const [showToast, setShowToast] = useState(false);
+
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+    const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    setError(isValid || value === '' ? '' : 'Invalid email format');
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!error && email) {
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      console.log('Subscribed with:', email);
+      setEmail('');
+    }
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  return (
+    <footer style={{ backgroundColor: 'burlywood' }} className="text-dark pt-4 pb-2 position-relative">
+      <div className="container">
+        <div className="row gy-4">
+          {/* Left */}
+          <div className="col-md-4 text-center text-md-start">
+            <h4>Holo Decor</h4>
+            <p>Your virtual home decor assistant.</p>
+            <p className="mb-1">Contact Us:</p>
+            <small>Email: support@holodecor.com</small>
+
+            <div className="mt-3">
+              <p className="mb-1">Subscribe for updates:</p>
+              <form onSubmit={handleSubmit}>
+                <input
+                  type="email"
+                  className="form-control mb-1"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={handleEmailChange}
+                  required
+                />
+                {error && <small className="text-danger">{error}</small>}
+                <button type="submit" className="btn btn-dark btn-sm mt-2" disabled={!!error || !email}>
+                  Subscribe
+                </button>
+              </form>
+            </div>
+          </div>
+
+          {/* Middle */}
+          <div className="col-md-4 text-center">
+            <ul className="list-unstyled">
+              <li><Link to="/" className="text-decoration-none text-dark d-block mb-1">Home</Link></li>
+              <li><Link to="/product" className="text-decoration-none text-dark d-block mb-1">Shop</Link></li>
+              <li><a href="#" className="text-decoration-none text-dark d-block mb-1">AR Visualization</a></li>
+              <li><Link to="/about#our-story" className="text-decoration-none text-dark d-block mb-1">Our Story</Link></li>
+              <li><a href="#" className="text-decoration-none text-dark d-block mb-1">Blog</a></li>
+            </ul>
+          </div>
+
+          {/* Right */}
+          <div className="col-md-4 text-center text-md-end">
+            <div className="d-flex justify-content-center justify-content-md-end gap-3 mb-2">
+              {[
+                { href: "https://facebook.com/holodecor", icon: "facebook-f" },
+                { href: "https://twitter.com/holodecor", icon: "twitter" },
+                { href: "https://instagram.com/holodecor", icon: "instagram" },
+              ].map((social, i) => (
+                <a
+                  key={i}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-dark"
+                  style={{
+                    transition: 'transform 0.3s ease',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.2)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  <i className={`fab fa-${social.icon} fa-lg`}></i>
+                </a>
+              ))}
+            </div>
+
+            <div className="small">
+              <a href="#" className="text-muted me-2 text-decoration-none">Privacy Policy</a>
+              <span>|</span>
+              <a href="#" className="text-muted ms-2 text-decoration-none">Terms & Conditions</a>
+            </div>
+          </div>
+        </div>
+
+        <hr className="my-3" style={{ borderTop: '1px solid #ccc' }} />
+
+        <div className="text-center small">&copy; 2025 Holo Decor. All Rights Reserved.</div>
+      </div>
+
+      {/* Toast */}
+      {showToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: '#333',
+          color: '#fff',
+          padding: '10px 20px',
+          borderRadius: '8px',
+          zIndex: 9999,
+          boxShadow: '0 0 10px rgba(0,0,0,0.2)'
+        }}>
+          Thanks for subscribing!
+        </div>
+      )}
+    </footer>
+  );
+};
+
+export default Footer;

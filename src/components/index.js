@@ -7,3 +7,4 @@ export { default as ImgWDesc   } from './ImgWDesc';
 export { default as SmallSection} from './SmallSection';
 export { default as VideoShowcase} from './VideoShowcase';
 export { default as AppScene } from './AppScene';
+export { default as BlogSection } from './BlogSection';
