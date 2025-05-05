@@ -8,25 +8,25 @@ const BlogSection = () => {
       title: "Why AR is the Future of Home Decor",
       description:
         "Augmented reality is transforming how people visualize furniture, paint colors, and layouts before buying.",
-      image: "/assets/ardecor.png",
+      image: "src/assets/ardecor.png",
     },
     {
       title: "How to Use AR for Redesigning Your Room",
       description:
         "Discover simple steps to use AR apps that let you preview furniture and decor in your actual space.",
-      image: "/assets/usingar.jpeg",
+      image: "src/assets/usingar.jpeg",
     },
     {
       title: "Themes That Transform Your Living Space",
       description:
         "Explore how color palettes, paired with AR visualization, can create a calming and modern home environment.",
-      image: "/assets/bluethemed.jpeg",
+      image: "src/assets/bluethemed.jpeg",
     },
     {
       title: "How AI and AR Are Changing E-commerce",
       description:
         "From virtual try-ons to 3D previews, AI and AR are enhancing online shopping experiences like never before.",
-      image: "/assets/arai.jpeg",
+      image: "src/assets/arai.jpeg",
     },
   ];
 
