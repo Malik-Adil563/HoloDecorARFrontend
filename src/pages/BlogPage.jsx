@@ -11,7 +11,7 @@ const blogContent = {
     title: "Why AR is the Future of Home Decor",
     date: "April 30, 2025",
     author: "Minahil Shah",
-    images: ["../assets/After.jpg", "../assets/Before.png"],
+    images: ["/assets/After.jpg", "/assets/Before.png"],
     content: `In today's rapidly evolving technological landscape, Augmented Reality (AR) is becoming a transformative force in the way we approach home decor and interior design. What was once the domain of professional designers and visualization experts is now accessible to anyone with a smartphone. AR enables users to bridge the gap between imagination and reality, offering a level of personalization, accuracy, and confidence that traditional design tools simply cannot match.
 
 Understanding AR in Home Decor
@@ -43,7 +43,7 @@ Imagine walking into your bedroom and receiving a suggestion on your device: a m
     title: "How to Use AR for Redesigning Your Room",
     date: "April 28, 2025",
     author: "Bushra Yawar",
-    images: ["../assets/blog2pic1.png"],
+    images: ["/assets/blog2pic1.png"],
     content: `Redesigning your space has never been easier. With our web-based AR Home Decor Visualizer, you can reimagine your room directly from your browser—no downloads or installations required.
 
 Step 1: Scan Your Space
@@ -65,7 +65,7 @@ Our browser-based AR tool brings the power of professional design directly to yo
     title: "Themes That Transform Your Living Space",
     date: "April 26, 2025",
     author: "Malik Adil",
-    images: ["../assets/blog3pic3.png", "../assets/blog3pic2.png", "../assets/blog3pic1.png"],
+    images: ["/assets/blog3pic3.png", "/assets/blog3pic2.png", "/assets/blog3pic1.png"],
     content: `Your home is more than just walls and furniture—it’s a place where your personality, mood, and values are expressed. Choosing the right interior design theme can completely transform the way your space looks and feels. Whether you're starting from scratch or looking to refresh a room, understanding different design themes can help you make intentional and impactful changes.
 
 One of the most popular approaches to modern home design is minimalism. With its “less is more” philosophy, minimalism strips away the unnecessary and embraces simplicity. This theme relies on neutral tones, clean lines, and functional furniture to create a calming, open atmosphere. Minimalist spaces often feel larger and more organized, making them ideal for small apartments or those who prefer clutter-free environments.
@@ -90,7 +90,7 @@ Ultimately, the best theme is the one that reflects your lifestyle, values, and 
     title: "How AI and AR Are Changing E-commerce",
     date: "April 24, 2025",
     author: "Minahil Shah",
-    images: ["../assets/blog4pic1.png"],
+    images: ["/assets/blog4pic1.png"],
     content: `The world of e-commerce is evolving fast, and two technologies are playing a major role in this transformation: Artificial Intelligence (AI) and Augmented Reality (AR). Together, they’re not just improving online shopping—they’re completely reshaping it.
 
 AI is making e-commerce smarter and more personalized. From product recommendations based on browsing behavior to chatbots that answer customer queries 24/7, AI helps online stores offer a smoother, faster, and more customized shopping experience. It can even manage inventory, predict trends, and analyze customer feedback to help businesses make better decisions.
