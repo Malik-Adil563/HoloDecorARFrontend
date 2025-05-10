@@ -86,15 +86,15 @@ const AppScene = ({ onClose }) => {
   };
 
   const captureSceneAndCheckWall = () => {
-    setMessage("Analyzing scene...");
+  setMessage("Analyzing scene...");
 
-    let imageData = canvasRef.current.toDataURL('image/jpeg');
-    imageData = imageData.split(',')[1];
+  canvasRef.current.toBlob((blob) => {
+    const formData = new FormData();
+    formData.append('image', blob, 'scene.jpg');
 
-    fetch('https://14cf3993-0a8a-4fcc-a670-81d92d092b65-00-3ib9bcwcj2mzr.sisko.replit.dev/detect-wall', {
+    fetch('http://your-backend-url/detect-wall', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: imageData })
+      body: formData,
     })
       .then((res) => res.json())
       .then((data) => {
@@ -112,7 +112,8 @@ const AppScene = ({ onClose }) => {
         console.error(err);
         setMessage("⚠️ Error analyzing the scene.");
       });
-  };
+  }, 'image/jpeg');
+};
 
   const loadModel = () => {
     const loader = new GLTFLoader();
