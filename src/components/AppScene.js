@@ -88,33 +88,51 @@ const AppScene = ({ onClose }) => {
   const captureSceneAndCheckWall = () => {
   setMessage("Analyzing scene...");
 
-  canvasRef.current.toBlob((blob) => {
-    const formData = new FormData();
-    formData.append('image', blob, 'scene.jpg');
+  // Ensure the canvas has rendered the scene
+  if (canvasRef.current) {
+    canvasRef.current.toBlob((blob) => {
+      if (!blob) {
+        console.error("Failed to capture image");
+        setMessage("⚠️ Error capturing the scene.");
+        return;
+      }
 
-    fetch('https://holodecorpythonbackend.onrender.com/detect-wall', {
-      method: 'POST',
-      body: formData,
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log('Server response:', data);
+      // Show the captured image for debugging
+      const imgUrl = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        // Log to make sure the image is captured
+        console.log("Captured image size:", img.width, img.height);
+      };
+      img.src = imgUrl;
 
-        if (data.wallDetected) {
-          clearInterval(captureInterval);
-          loadModel();
-          setMessage("Wall detected ✅ Sofa placed.");
-        } else {
-          setMessage("❌ No wall detected. Retrying...");
-        }
+      // Send the image to the backend
+      const formData = new FormData();
+      formData.append('image', blob, 'scene.jpg');
+
+      fetch('https://holodecorpythonbackend.onrender.com/detect-wall', {
+        method: 'POST',
+        body: formData,
       })
-      .catch((err) => {
-        console.error(err);
-        setMessage("⚠️ Error analyzing the scene.");
-      });
-  }, 'image/jpeg');
-};
+        .then((res) => res.json())
+        .then((data) => {
+          console.log('Server response:', data);
 
+          if (data.wallDetected) {
+            clearInterval(captureInterval);
+            loadModel();
+            setMessage("Wall detected ✅ Sofa placed.");
+          } else {
+            setMessage("❌ No wall detected. Retrying...");
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+          setMessage("⚠️ Error analyzing the scene.");
+        });
+    }, 'image/jpeg');
+  }
+};
   const loadModel = () => {
     const loader = new GLTFLoader();
     loader.load(
