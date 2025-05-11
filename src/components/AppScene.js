@@ -92,7 +92,7 @@ const AppScene = ({ onClose }) => {
     const formData = new FormData();
     formData.append('image', blob, 'scene.jpg');
 
-    fetch('http://your-backend-url/detect-wall', {
+    fetch('https://backendyolov8.onrender.com/detect-wall', {
       method: 'POST',
       body: formData,
     })
