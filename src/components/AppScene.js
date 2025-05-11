@@ -92,7 +92,7 @@ const AppScene = ({ onClose }) => {
     const formData = new FormData();
     formData.append('image', blob, 'scene.jpg');
 
-    fetch('https://backendyolov8.onrender.com/detect-wall', {
+    fetch('https://holodecorpythonbackend.onrender.com/detect-wall', {
       method: 'POST',
       body: formData,
     })
