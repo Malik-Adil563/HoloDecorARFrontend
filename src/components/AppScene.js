@@ -86,60 +86,50 @@ const AppScene = ({ onClose }) => {
   };
 
   const captureSceneAndCheckWall = () => {
-  setMessage("Analyzing scene...");
+    setMessage("Analyzing scene...");
 
-  // Ensure the canvas has rendered the scene
-  if (canvasRef.current) {
-    canvasRef.current.toBlob((blob) => {
-      if (!blob) {
-        console.error("Failed to capture image");
-        setMessage("⚠️ Error capturing the scene.");
-        return;
-      }
+    if (canvasRef.current) {
+      canvasRef.current.toBlob((blob) => {
+        if (!blob) {
+          console.error("Failed to capture image");
+          setMessage("⚠️ Error capturing the scene.");
+          return;
+        }
 
-      // Show the captured image for debugging
-      const imgUrl = URL.createObjectURL(blob);
-      const img = new Image();
-      img.onload = () => {
-        // Log to make sure the image is captured
-        console.log("Captured image size:", img.width, img.height);
-      };
-      img.src = imgUrl;
+        const formData = new FormData();
+        formData.append('image', blob, 'scene.jpg');
 
-      // Send the image to the backend
-      const formData = new FormData();
-      formData.append('image', blob, 'scene.jpg');
-
-      fetch('https://holodecorpythonbackend.onrender.com/detect-wall', {
-        method: 'POST',
-        body: formData,
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          console.log('Server response:', data);
-
-          if (data.wallDetected) {
-            clearInterval(captureInterval);
-            loadModel();
-            setMessage("Wall detected ✅ Sofa placed.");
-          } else {
-            setMessage("❌ No wall detected. Retrying...");
-          }
+        fetch('https://holodecorpythonbackend.onrender.com/detect-wall', {
+          method: 'POST',
+          body: formData,
         })
-        .catch((err) => {
-          console.error(err);
-          setMessage("⚠️ Error analyzing the scene.");
-        });
-    }, 'image/jpeg');
-  }
-};
+          .then((res) => res.json())
+          .then((data) => {
+            console.log('Server response:', data);
+
+            if (data.wallDetected) {
+              clearInterval(captureInterval);
+              loadModel();
+              setMessage("Wall detected ✅ Sofa placed.");
+            } else {
+              setMessage("❌ No wall detected. Retrying...");
+            }
+          })
+          .catch((err) => {
+            console.error(err);
+            setMessage("⚠️ Error analyzing the scene.");
+          });
+      }, 'image/jpeg');
+    }
+  };
+
   const loadModel = () => {
     const loader = new GLTFLoader();
     loader.load(
       '/3DModels/painted_sofa.glb',
       (gltf) => {
         model = gltf.scene;
-        model.scale.set(0.3, 0.3, 0.3);
+        model.scale.set(1.83, 0.61, 0.76); // Width (72in), Height (24in), Depth (~30in) in meters
         model.position.set(0, -0.1, -0.8);
         scene.add(model);
       },
@@ -167,7 +157,7 @@ const AppScene = ({ onClose }) => {
     if (model) {
       const zoomFactor = 1 - event.deltaY * 0.001;
       const newScale = model.scale.clone().multiplyScalar(zoomFactor);
-      if (newScale.x > 0.01 && newScale.x < 1) {
+      if (newScale.x > 0.01 && newScale.x < 2) {
         model.scale.copy(newScale);
       }
     }
