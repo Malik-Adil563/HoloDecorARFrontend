@@ -86,42 +86,62 @@ const AppScene = ({ onClose }) => {
   };
 
   const captureSceneAndCheckWall = () => {
-    setMessage("Analyzing scene...");
+  setMessage("Analyzing scene...");
 
-    if (canvasRef.current) {
-      canvasRef.current.toBlob((blob) => {
-        if (!blob) {
-          console.error("Failed to capture image");
-          setMessage("⚠️ Error capturing the scene.");
-          return;
-        }
+  if (!canvasRef.current) return;
 
-        const formData = new FormData();
-        formData.append('image', blob, 'scene.jpg');
+  const originalCanvas = canvasRef.current;
+  const width = originalCanvas.width;
+  const height = originalCanvas.height;
 
-        fetch('https://holodecorpythonbackend.onrender.com/detect-wall', {
-          method: 'POST',
-          body: formData,
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            console.log('Server response:', data);
+  // Create an offscreen canvas to draw the original image + border
+  const borderedCanvas = document.createElement('canvas');
+  const borderSize = 20; // Change this to increase/decrease border thickness
+  borderedCanvas.width = width + borderSize * 2;
+  borderedCanvas.height = height + borderSize * 2;
 
-            if (data.wallDetected) {
-              clearInterval(captureInterval);
-              loadModel();
-              setMessage("Wall detected ✅ Sofa placed.");
-            } else {
-              setMessage("❌ No wall detected. Retrying...");
-            }
-          })
-          .catch((err) => {
-            console.error(err);
-            setMessage("⚠️ Error analyzing the scene.");
-          });
-      }, 'image/jpeg');
+  const ctx = borderedCanvas.getContext('2d');
+
+  // Draw border (black)
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, borderedCanvas.width, borderedCanvas.height);
+
+  // Draw the original image on top, centered with border
+  ctx.drawImage(originalCanvas, borderSize, borderSize, width, height);
+
+  // Convert the bordered canvas to blob
+  borderedCanvas.toBlob((blob) => {
+    if (!blob) {
+      console.error("Failed to capture image");
+      setMessage("⚠️ Error capturing the scene.");
+      return;
     }
-  };
+
+    const formData = new FormData();
+    formData.append('image', blob, 'scene_with_border.jpg');
+
+    fetch('https://holodecorpythonbackend.onrender.com/detect-wall', {
+      method: 'POST',
+      body: formData,
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log('Server response:', data);
+
+        if (data.wallDetected) {
+          clearInterval(captureInterval);
+          loadModel();
+          setMessage("Wall detected ✅ Sofa placed.");
+        } else {
+          setMessage("❌ No wall detected. Retrying...");
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setMessage("⚠️ Error analyzing the scene.");
+      });
+  }, 'image/jpeg');
+};
 
   const loadModel = () => {
     const loader = new GLTFLoader();
