@@ -129,7 +129,7 @@ const AppScene = ({ onClose }) => {
       '/3DModels/painted_sofa.glb',
       (gltf) => {
         model = gltf.scene;
-        model.scale.set(1.83, 0.61, 0.76); // Width (72in), Height (24in), Depth (~30in) in meters
+       model.scale.set(1.27, 0.9144, 0.76); // Width, Height, Depth in meters
         model.position.set(0, -0.1, -0.8);
         scene.add(model);
       },
