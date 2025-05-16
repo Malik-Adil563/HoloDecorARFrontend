@@ -5,20 +5,17 @@ import 'webxr-polyfill';
 
 const AppScene = ({ onClose }) => {
   const containerRef = useRef(null);
-  const canvasRef = useRef(null);
-  const rendererRef = useRef(null);
-  const firstFrameRenderedRef = useRef(false);
-  const [message, setMessage] = useState("Initializing AR...");
+  const [message, setMessage] = useState("Hold camera at the scene...");
+  const rendererRef = useRef();
+  const [captureIntervalId, setCaptureIntervalId] = useState(null);
+
   let camera, scene, controller, model;
-  let captureInterval;
+  let renderTarget, offscreenCanvas, offscreenCtx;
 
   useEffect(() => {
     checkARSupport();
     return () => {
-      if (captureInterval) clearInterval(captureInterval);
-      if (rendererRef.current && rendererRef.current.xr.getSession()) {
-        rendererRef.current.xr.getSession().end();
-      }
+      if (captureIntervalId) clearInterval(captureIntervalId);
     };
   }, []);
 
@@ -27,23 +24,40 @@ const AppScene = ({ onClose }) => {
       showWarningNotification("Your device does not support WebXR.");
       return;
     }
+
     init();
+    animate();
     startAR();
+
+    const intervalId = setInterval(captureSceneAndCheckWall, 10000);
+    setCaptureIntervalId(intervalId);
   };
 
-  const showWarningNotification = (message) => {
+  const showWarningNotification = (msg) => {
     if ("Notification" in window) {
       if (Notification.permission === "granted") {
-        new Notification("⚠️ WebXR Warning", { body: message });
+        new Notification("⚠️ WebXR Warning", { body: msg });
       } else if (Notification.permission !== "denied") {
         Notification.requestPermission().then((permission) => {
           if (permission === "granted") {
-            new Notification("⚠️ WebXR Warning", { body: message });
+            new Notification("⚠️ WebXR Warning", { body: msg });
           }
         });
       }
     } else {
-      alert(message);
+      alert(msg);
+    }
+  };
+
+  const startAR = async () => {
+    try {
+      const session = await navigator.xr.requestSession('immersive-ar', {
+        requiredFeatures: ['hit-test'],
+        optionalFeatures: ['local-floor'],
+      });
+      rendererRef.current.xr.setSession(session);
+    } catch (error) {
+      console.error("Failed to start AR session", error);
     }
   };
 
@@ -55,13 +69,9 @@ const AppScene = ({ onClose }) => {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.xr.enabled = true;
-
-    // Force opaque for first few frames to avoid black captures
-    renderer.setClearColor(0x000000, 1);
-
     rendererRef.current = renderer;
-    canvasRef.current = renderer.domElement;
-    containerRef.current.appendChild(canvasRef.current);
+
+    containerRef.current.appendChild(renderer.domElement);
 
     const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
     light.position.set(0.5, 1, 0.25);
@@ -71,75 +81,54 @@ const AppScene = ({ onClose }) => {
     controller.addEventListener('select', onSelect);
     scene.add(controller);
 
-    // Add a dummy object to ensure canvas has color info
-    const tempCube = new THREE.Mesh(
-      new THREE.BoxGeometry(0.1, 0.1, 0.1),
-      new THREE.MeshBasicMaterial({ color: 0xff0000 })
-    );
-    tempCube.position.set(0, 0, -1);
-    scene.add(tempCube);
-
-    window.addEventListener('resize', onWindowResize, false);
+    window.addEventListener('resize', onWindowResize);
     window.addEventListener('wheel', onZoom);
-  };
 
-  const startAR = async () => {
-    try {
-      const session = await navigator.xr.requestSession('immersive-ar', {
-        requiredFeatures: ['hit-test'],
-        optionalFeatures: ['local-floor']
-      });
-
-      rendererRef.current.xr.setSession(session);
-
-      // Animate with frame counter
-      let frameCount = 0;
-      rendererRef.current.setAnimationLoop(() => {
-        rendererRef.current.render(scene, camera);
-
-        if (!firstFrameRenderedRef.current) {
-          frameCount++;
-          if (frameCount > 30) { // ~0.5 sec
-            firstFrameRenderedRef.current = true;
-            rendererRef.current.setClearColor(0x000000, 0); // restore transparency
-            setMessage("Hold camera at the scene...");
-            startCaptureInterval();
-          }
-        }
-      });
-    } catch (error) {
-      console.error("Failed to start AR session", error);
-    }
-  };
-
-  const startCaptureInterval = () => {
-    captureInterval = setInterval(captureSceneAndCheckWall, 10000);
+    // Offscreen setup
+    renderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight);
+    offscreenCanvas = document.createElement('canvas');
+    offscreenCanvas.width = window.innerWidth;
+    offscreenCanvas.height = window.innerHeight;
+    offscreenCtx = offscreenCanvas.getContext('2d');
   };
 
   const captureSceneAndCheckWall = () => {
-    if (!canvasRef.current) return;
-
     setMessage("Analyzing scene...");
-    canvasRef.current.toBlob((blob) => {
+
+    const renderer = rendererRef.current;
+    if (!renderer) return;
+
+    renderer.setRenderTarget(renderTarget);
+    renderer.render(scene, camera);
+    renderer.setRenderTarget(null);
+
+    const pixels = new Uint8Array(window.innerWidth * window.innerHeight * 4);
+    renderer.readRenderTargetPixels(renderTarget, 0, 0, window.innerWidth, window.innerHeight, pixels);
+
+    const imageData = new ImageData(
+      new Uint8ClampedArray(pixels),
+      window.innerWidth,
+      window.innerHeight
+    );
+    offscreenCtx.putImageData(imageData, 0, 0);
+
+    offscreenCanvas.toBlob((blob) => {
       if (!blob) {
-        console.error("Failed to capture image");
-        setMessage("⚠️ Error capturing the scene.");
+        setMessage("⚠️ Could not capture scene.");
         return;
       }
 
       const formData = new FormData();
-      formData.append('image', blob, 'scene.jpg');
+      formData.append("image", blob, "scene.jpg");
 
-      fetch('https://holodecorpythonbackend.onrender.com/detect-wall', {
-        method: 'POST',
+      fetch("https://holodecorpythonbackend.onrender.com/detect-wall", {
+        method: "POST",
         body: formData,
       })
         .then((res) => res.json())
         .then((data) => {
-          console.log('Server response:', data);
-
           if (data.wallDetected) {
-            clearInterval(captureInterval);
+            clearInterval(captureIntervalId);
             loadModel();
             setMessage("Wall detected ✅ Sofa placed.");
           } else {
@@ -147,10 +136,10 @@ const AppScene = ({ onClose }) => {
           }
         })
         .catch((err) => {
-          console.error(err);
-          setMessage("⚠️ Error analyzing the scene.");
+          console.error("Upload error:", err);
+          setMessage("⚠️ Upload failed.");
         });
-    }, 'image/jpeg');
+    }, "image/jpeg");
   };
 
   const loadModel = () => {
@@ -159,7 +148,7 @@ const AppScene = ({ onClose }) => {
       '/3DModels/painted_sofa.glb',
       (gltf) => {
         model = gltf.scene;
-        model.scale.set(1.27, 0.9144, 0.76); // Width, Height, Depth in meters
+        model.scale.set(1.27, 0.9144, 0.76);
         model.position.set(0, -0.1, -0.8);
         scene.add(model);
       },
@@ -173,13 +162,6 @@ const AppScene = ({ onClose }) => {
       const position = new THREE.Vector3();
       position.set(0, 0, -0.5).applyMatrix4(controller.matrixWorld);
       model.position.copy(position);
-
-      const originalScale = model.scale.clone();
-      const originalRotation = model.rotation.clone();
-
-      model.quaternion.setFromRotationMatrix(controller.matrixWorld);
-      model.rotation.copy(originalRotation);
-      model.scale.copy(originalScale);
     }
   };
 
@@ -199,13 +181,17 @@ const AppScene = ({ onClose }) => {
     rendererRef.current.setSize(window.innerWidth, window.innerHeight);
   };
 
+  const animate = () => {
+    rendererRef.current.setAnimationLoop(() => {
+      rendererRef.current.render(scene, camera);
+    });
+  };
+
   return (
-    <div ref={containerRef} style={{
-      position: 'relative',
-      width: '100vw',
-      height: '100vh',
-      overflow: 'hidden',
-    }}>
+    <div
+      ref={containerRef}
+      style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}
+    >
       <div style={{
         position: 'absolute',
         top: '10px',
