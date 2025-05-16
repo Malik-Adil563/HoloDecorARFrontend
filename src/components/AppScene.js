@@ -5,59 +5,103 @@ import 'webxr-polyfill';
 
 const AppScene = ({ onClose }) => {
   const containerRef = useRef(null);
+  const canvasRef = useRef(null);
+  const videoRef = useRef(null);
   const [message, setMessage] = useState("Hold camera at the scene...");
-  const rendererRef = useRef();
-  const [captureIntervalId, setCaptureIntervalId] = useState(null);
+  const [arReady, setARReady] = useState(false);
 
-  let camera, scene, controller, model;
-  let renderTarget, offscreenCanvas, offscreenCtx;
+  let camera, scene, renderer, controller, model;
 
   useEffect(() => {
-    checkARSupport();
+    startSimpleCameraAndDetect();
     return () => {
-      if (captureIntervalId) clearInterval(captureIntervalId);
+      stopCameraStream();
     };
   }, []);
 
-  const checkARSupport = async () => {
+  const stopCameraStream = () => {
+    const stream = videoRef.current?.srcObject;
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+  };
+
+  const startSimpleCameraAndDetect = async () => {
+    setMessage("Analyzing environment before AR...");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      videoRef.current.srcObject = stream;
+      videoRef.current.play();
+
+      setTimeout(captureFrameAndDetectWall, 3000); // wait 3 seconds before capture
+    } catch (err) {
+      console.error("Camera access failed", err);
+      setMessage("⚠️ Camera access failed.");
+    }
+  };
+
+  const captureFrameAndDetectWall = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = video.videoWidth;
+    tempCanvas.height = video.videoHeight;
+    const ctx = tempCanvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+
+    tempCanvas.toBlob((blob) => {
+      if (!blob) {
+        setMessage("⚠️ Error capturing image.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('image', blob, 'scene.jpg');
+
+      fetch('https://holodecorpythonbackend.onrender.com/detect-wall', {
+        method: 'POST',
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.wallDetected) {
+            setMessage("✅ Wall detected. Starting AR...");
+            stopCameraStream();
+            setARReady(true);
+            setTimeout(startARScene, 2000);
+          } else {
+            setMessage("❌ No wall detected. Try again.");
+            setTimeout(captureFrameAndDetectWall, 3000);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          setMessage("⚠️ Detection failed.");
+        });
+    }, 'image/jpeg');
+  };
+
+  const startARScene = async () => {
     if (!navigator.xr || !(await navigator.xr.isSessionSupported('immersive-ar'))) {
-      showWarningNotification("Your device does not support WebXR.");
+      setMessage("Your device does not support WebXR.");
       return;
     }
 
     init();
     animate();
-    startAR();
 
-    const intervalId = setInterval(captureSceneAndCheckWall, 10000);
-    setCaptureIntervalId(intervalId);
-  };
-
-  const showWarningNotification = (msg) => {
-    if ("Notification" in window) {
-      if (Notification.permission === "granted") {
-        new Notification("⚠️ WebXR Warning", { body: msg });
-      } else if (Notification.permission !== "denied") {
-        Notification.requestPermission().then((permission) => {
-          if (permission === "granted") {
-            new Notification("⚠️ WebXR Warning", { body: msg });
-          }
-        });
-      }
-    } else {
-      alert(msg);
-    }
-  };
-
-  const startAR = async () => {
     try {
       const session = await navigator.xr.requestSession('immersive-ar', {
         requiredFeatures: ['hit-test'],
-        optionalFeatures: ['local-floor'],
+        optionalFeatures: ['local-floor']
       });
-      rendererRef.current.xr.setSession(session);
+
+      renderer.xr.setSession(session);
+      loadModel();
     } catch (error) {
-      console.error("Failed to start AR session", error);
+      console.error("AR session failed", error);
+      setMessage("⚠️ Could not start AR session.");
     }
   };
 
@@ -65,13 +109,13 @@ const AppScene = ({ onClose }) => {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 40);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.xr.enabled = true;
-    rendererRef.current = renderer;
 
-    containerRef.current.appendChild(renderer.domElement);
+    canvasRef.current = renderer.domElement;
+    containerRef.current.appendChild(canvasRef.current);
 
     const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
     light.position.set(0.5, 1, 0.25);
@@ -83,63 +127,6 @@ const AppScene = ({ onClose }) => {
 
     window.addEventListener('resize', onWindowResize);
     window.addEventListener('wheel', onZoom);
-
-    // Offscreen setup
-    renderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight);
-    offscreenCanvas = document.createElement('canvas');
-    offscreenCanvas.width = window.innerWidth;
-    offscreenCanvas.height = window.innerHeight;
-    offscreenCtx = offscreenCanvas.getContext('2d');
-  };
-
-  const captureSceneAndCheckWall = () => {
-    setMessage("Analyzing scene...");
-
-    const renderer = rendererRef.current;
-    if (!renderer) return;
-
-    renderer.setRenderTarget(renderTarget);
-    renderer.render(scene, camera);
-    renderer.setRenderTarget(null);
-
-    const pixels = new Uint8Array(window.innerWidth * window.innerHeight * 4);
-    renderer.readRenderTargetPixels(renderTarget, 0, 0, window.innerWidth, window.innerHeight, pixels);
-
-    const imageData = new ImageData(
-      new Uint8ClampedArray(pixels),
-      window.innerWidth,
-      window.innerHeight
-    );
-    offscreenCtx.putImageData(imageData, 0, 0);
-
-    offscreenCanvas.toBlob((blob) => {
-      if (!blob) {
-        setMessage("⚠️ Could not capture scene.");
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("image", blob, "scene.jpg");
-
-      fetch("https://holodecorpythonbackend.onrender.com/detect-wall", {
-        method: "POST",
-        body: formData,
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.wallDetected) {
-            clearInterval(captureIntervalId);
-            loadModel();
-            setMessage("Wall detected ✅ Sofa placed.");
-          } else {
-            setMessage("❌ No wall detected. Retrying...");
-          }
-        })
-        .catch((err) => {
-          console.error("Upload error:", err);
-          setMessage("⚠️ Upload failed.");
-        });
-    }, "image/jpeg");
   };
 
   const loadModel = () => {
@@ -151,16 +138,16 @@ const AppScene = ({ onClose }) => {
         model.scale.set(1.27, 0.9144, 0.76);
         model.position.set(0, -0.1, -0.8);
         scene.add(model);
+        setMessage("✅ Sofa placed in AR.");
       },
       undefined,
-      (error) => console.error('Error loading model:', error)
+      (error) => console.error("Model load error:", error)
     );
   };
 
   const onSelect = () => {
     if (model) {
-      const position = new THREE.Vector3();
-      position.set(0, 0, -0.5).applyMatrix4(controller.matrixWorld);
+      const position = new THREE.Vector3().set(0, 0, -0.5).applyMatrix4(controller.matrixWorld);
       model.position.copy(position);
     }
   };
@@ -169,29 +156,26 @@ const AppScene = ({ onClose }) => {
     if (model) {
       const zoomFactor = 1 - event.deltaY * 0.001;
       const newScale = model.scale.clone().multiplyScalar(zoomFactor);
-      if (newScale.x > 0.01 && newScale.x < 2) {
-        model.scale.copy(newScale);
-      }
+      if (newScale.x > 0.01 && newScale.x < 2) model.scale.copy(newScale);
     }
   };
 
   const onWindowResize = () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    rendererRef.current.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(window.innerWidth, window.innerHeight);
   };
 
   const animate = () => {
-    rendererRef.current.setAnimationLoop(() => {
-      rendererRef.current.render(scene, camera);
-    });
+    renderer.setAnimationLoop(() => renderer.render(scene, camera));
   };
 
   return (
-    <div
-      ref={containerRef}
-      style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}
-    >
+    <div ref={containerRef} style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+      {!arReady && (
+        <video ref={videoRef} playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      )}
+
       <div style={{
         position: 'absolute',
         top: '10px',
