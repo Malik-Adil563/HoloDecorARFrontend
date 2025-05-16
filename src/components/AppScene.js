@@ -86,42 +86,50 @@ const AppScene = ({ onClose }) => {
   };
 
   const captureSceneAndCheckWall = () => {
-    setMessage("Analyzing scene...");
+  setMessage("Analyzing scene...");
 
-    if (canvasRef.current) {
-      canvasRef.current.toBlob((blob) => {
-        if (!blob) {
-          console.error("Failed to capture image");
-          setMessage("⚠️ Error capturing the scene.");
-          return;
-        }
+  if (canvasRef.current) {
+    canvasRef.current.toBlob((blob) => {
+      if (!blob) {
+        console.error("Failed to capture image");
+        setMessage("⚠️ Error capturing the scene.");
+        return;
+      }
 
-        const formData = new FormData();
-        formData.append('image', blob, 'scene.jpg');
+      // ⬇️ DOWNLOAD captured image locally
+      const downloadLink = document.createElement('a');
+      downloadLink.href = URL.createObjectURL(blob);
+      downloadLink.download = `captured_frame_${Date.now()}.jpg`;
+      downloadLink.click();
 
-        fetch('https://holodecorpythonbackend.onrender.com/detect-wall', {
-          method: 'POST',
-          body: formData,
+      // ⬇️ Continue with backend upload
+      const formData = new FormData();
+      formData.append('image', blob, 'scene.jpg');
+
+      fetch('https://holodecorpythonbackend.onrender.com/detect-wall', {
+        method: 'POST',
+        body: formData,
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          console.log('Server response:', data);
+
+          if (data.wallDetected) {
+            clearInterval(captureInterval);
+            loadModel();
+            setMessage("Wall detected ✅ Sofa placed.");
+          } else {
+            setMessage("❌ No wall detected. Retrying...");
+          }
         })
-          .then((res) => res.json())
-          .then((data) => {
-            console.log('Server response:', data);
+        .catch((err) => {
+          console.error(err);
+          setMessage("⚠️ Error analyzing the scene.");
+        });
+    }, 'image/jpeg');
+  }
+};
 
-            if (data.wallDetected) {
-              clearInterval(captureInterval);
-              loadModel();
-              setMessage("Wall detected ✅ Sofa placed.");
-            } else {
-              setMessage("❌ No wall detected. Retrying...");
-            }
-          })
-          .catch((err) => {
-            console.error(err);
-            setMessage("⚠️ Error analyzing the scene.");
-          });
-      }, 'image/jpeg');
-    }
-  };
 
   const loadModel = () => {
     const loader = new GLTFLoader();
