@@ -6,14 +6,30 @@ import 'webxr-polyfill';
 const AppScene = ({ onClose }) => {
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
+  const videoRef = useRef(null);
+  const hiddenCanvasRef = useRef(null);
   const [message, setMessage] = useState("Hold camera at the scene...");
   let camera, scene, renderer, controller, model;
   let captureInterval;
 
   useEffect(() => {
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then((stream) => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to access camera", err);
+      });
+
     checkARSupport();
+
     return () => {
       if (captureInterval) clearInterval(captureInterval);
+      if (videoRef.current && videoRef.current.srcObject) {
+        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+      }
     };
   }, []);
 
@@ -88,10 +104,19 @@ const AppScene = ({ onClose }) => {
   const captureSceneAndCheckWall = () => {
     setMessage("Analyzing scene...");
 
-    if (canvasRef.current) {
-      canvasRef.current.toBlob((blob) => {
+    const video = videoRef.current;
+    const hiddenCanvas = hiddenCanvasRef.current;
+
+    if (video && hiddenCanvas) {
+      hiddenCanvas.width = video.videoWidth;
+      hiddenCanvas.height = video.videoHeight;
+
+      const ctx = hiddenCanvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
+
+      hiddenCanvas.toBlob((blob) => {
         if (!blob) {
-          console.error("Failed to capture image");
+          console.error("Failed to capture frame from video");
           setMessage("⚠️ Error capturing the scene.");
           return;
         }
@@ -129,7 +154,7 @@ const AppScene = ({ onClose }) => {
       '/3DModels/painted_sofa.glb',
       (gltf) => {
         model = gltf.scene;
-       model.scale.set(1.27, 0.9144, 0.76); // Width, Height, Depth in meters
+        model.scale.set(1.27, 0.9144, 0.76); // Width, Height, Depth in meters
         model.position.set(0, -0.1, -0.8);
         scene.add(model);
       },
@@ -180,6 +205,15 @@ const AppScene = ({ onClose }) => {
       height: '100vh',
       overflow: 'hidden',
     }}>
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        style={{ display: "none" }}
+      ></video>
+      <canvas ref={hiddenCanvasRef} style={{ display: "none" }} />
+
       <div style={{
         position: 'absolute',
         top: '10px',
