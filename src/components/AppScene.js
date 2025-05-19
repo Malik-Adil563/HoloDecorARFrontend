@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import 'webxr-polyfill';
+import './AppScene.css'; // You’ll define styles separately
 
 const AppScene = ({ onClose }) => {
   const containerRef = useRef(null);
@@ -9,21 +10,18 @@ const AppScene = ({ onClose }) => {
   const videoRef = useRef(null);
   const [message, setMessage] = useState("Hold camera at the scene...");
   const [arReady, setARReady] = useState(false);
+  const [showPopup, setShowPopup] = useState(true);
 
   let camera, scene, renderer, controller, model;
 
   useEffect(() => {
     startSimpleCameraAndDetect();
-    return () => {
-      stopCameraStream();
-    };
+    return () => stopCameraStream();
   }, []);
 
   const stopCameraStream = () => {
     const stream = videoRef.current?.srcObject;
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-    }
+    if (stream) stream.getTracks().forEach(track => track.stop());
   };
 
   const startSimpleCameraAndDetect = async () => {
@@ -32,8 +30,7 @@ const AppScene = ({ onClose }) => {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       videoRef.current.srcObject = stream;
       videoRef.current.play();
-
-      setTimeout(captureFrameAndDetectWall, 3000); // wait 3 seconds before capture
+      setTimeout(captureFrameAndDetectWall, 3000);
     } catch (err) {
       console.error("Camera access failed", err);
       setMessage("⚠️ Camera access failed.");
@@ -68,8 +65,9 @@ const AppScene = ({ onClose }) => {
           if (data.wallDetected) {
             setMessage("✅ Wall detected. Starting AR...");
             stopCameraStream();
+            setShowPopup(false);
             setARReady(true);
-            setTimeout(startARScene, 2000);
+            setTimeout(startARScene, 1500);
           } else {
             setMessage("❌ No wall detected. Try again.");
             setTimeout(captureFrameAndDetectWall, 3000);
@@ -172,39 +170,15 @@ const AppScene = ({ onClose }) => {
 
   return (
     <div ref={containerRef} style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
-      {!arReady && (
-        <video ref={videoRef} playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      {!arReady && showPopup && (
+        <div className="popup-container">
+          <div className="popup-overlay top" />
+          <video ref={videoRef} playsInline muted className="popup-video" />
+          <div className="popup-overlay bottom" />
+          <div className="popup-message">{message}</div>
+          <button onClick={onClose} className="popup-cancel">✕</button>
+        </div>
       )}
-
-      <div style={{
-        position: 'absolute',
-        top: '10px',
-        left: '10px',
-        background: 'rgba(0,0,0,0.6)',
-        color: '#fff',
-        padding: '10px 15px',
-        borderRadius: '8px',
-        fontSize: '16px',
-        zIndex: 1000
-      }}>
-        {message}
-      </div>
-
-      <button onClick={onClose} style={{
-        position: 'absolute',
-        top: '10px',
-        right: '10px',
-        background: 'red',
-        color: 'white',
-        border: 'none',
-        padding: '10px',
-        fontSize: '16px',
-        cursor: 'pointer',
-        zIndex: 1000,
-        borderRadius: '50%',
-      }}>
-        ✕
-      </button>
     </div>
   );
 };
