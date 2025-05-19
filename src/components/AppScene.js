@@ -171,14 +171,20 @@ const AppScene = ({ onClose }) => {
   return (
     <div ref={containerRef} style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
       {!arReady && showPopup && (
-        <div className="popup-container">
-          <div className="popup-overlay top" />
-          <video ref={videoRef} playsInline muted className="popup-video" />
-          <div className="popup-overlay bottom" />
-          <div className="popup-message">{message}</div>
-          <button onClick={onClose} className="popup-cancel">✕</button>
-        </div>
-      )}
+  <div className="camera-modal">
+    <div className="camera-header">
+      <button onClick={onClose} className="cancel-button">✕</button>
+    </div>
+
+    <div className="camera-box">
+      <div className="grey-bar top-bar" />
+      <video ref={videoRef} playsInline muted autoPlay className="camera-video" />
+      <div className="grey-bar bottom-bar" />
+    </div>
+
+    <div className="camera-message">{message}</div>
+  </div>
+)}
     </div>
   );
 };
