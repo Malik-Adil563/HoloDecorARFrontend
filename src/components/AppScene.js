@@ -127,6 +127,7 @@ const AppScene = ({ onClose }) => {
     window.addEventListener('wheel', onZoom);
   };
 
+  const loadModel = () => {
   const loader = new FBXLoader();
 loader.load(
   '/3DModels/Black_Sofa.fbx',  // Make sure this path is correct
@@ -140,6 +141,7 @@ loader.load(
   undefined,
   (error) => console.error("Model load error:", error)
 );
+};
 
   const onSelect = () => {
     if (model) {
