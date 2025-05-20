@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 import 'webxr-polyfill';
 import './AppScene.css'; // You’ll define styles separately
 
@@ -127,21 +127,19 @@ const AppScene = ({ onClose }) => {
     window.addEventListener('wheel', onZoom);
   };
 
-  const loadModel = () => {
-    const loader = new GLTFLoader();
-    loader.load(
-      '/3DModels/Black_SOFA.glb',
-      (gltf) => {
-        model = gltf.scene;
-        model.scale.set(1.27, 0.9144, 0.76);
-        model.position.set(0, -0.1, -0.8);
-        scene.add(model);
-        setMessage("✅ Sofa placed in AR.");
-      },
-      undefined,
-      (error) => console.error("Model load error:", error)
-    );
-  };
+  const loader = new FBXLoader();
+loader.load(
+  '/3DModels/Black_Sofa.fbx',  // Make sure this path is correct
+  (fbx) => {
+    model = fbx;
+    model.scale.set(1.27, 0.9144, 0.76);  // Adjust as needed
+    model.position.set(0, -0.1, -0.8);
+    scene.add(model);
+    setMessage("✅ Sofa placed in AR.");
+  },
+  undefined,
+  (error) => console.error("Model load error:", error)
+);
 
   const onSelect = () => {
     if (model) {
