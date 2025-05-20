@@ -130,7 +130,7 @@ const AppScene = ({ onClose }) => {
   const loadModel = () => {
     const loader = new GLTFLoader();
     loader.load(
-      '/3DModels/sofa_painted.glb',
+      '/3DModels/sofa1.glb',
       (gltf) => {
         model = gltf.scene;
         model.scale.set(1.27, 0.9144, 0.76);
