@@ -111,7 +111,11 @@ const Product = () => {
               </button>
             </div>
           </div>
-          {selectedProduct && <AppScene onClose={() => setSelectedProduct(null)} />}
+          {selectedProduct && ( 
+            <AppScene onClose={() => setSelectedProduct(null)}
+              modelUrl={selectedProduct.modelUrl} // ✅ Pass model URL
+            />
+          )}
         </div>
       </>
     );

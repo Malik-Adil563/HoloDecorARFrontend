@@ -2,9 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import 'webxr-polyfill';
-import './AppScene.css'; // You’ll define styles separately
+import './AppScene.css';
 
-const AppScene = ({ onClose }) => {
+const AppScene = ({ onClose, modelUrl }) => {
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
   const videoRef = useRef(null);
@@ -128,18 +128,26 @@ const AppScene = ({ onClose }) => {
   };
 
   const loadModel = () => {
+    if (!modelUrl) {
+      setMessage("⚠️ No model URL provided.");
+      return;
+    }
+
     const loader = new GLTFLoader();
     loader.load(
-      '/3DModels/sofa1.glb',
+      modelUrl,
       (gltf) => {
         model = gltf.scene;
         model.scale.set(1.27, 0.9144, 0.76);
         model.position.set(0, -0.1, -0.8);
         scene.add(model);
-        setMessage("✅ Sofa placed in AR.");
+        setMessage("✅ Model placed in AR.");
       },
       undefined,
-      (error) => console.error("Model load error:", error)
+      (error) => {
+        console.error("Model load error:", error);
+        setMessage("⚠️ Failed to load model.");
+      }
     );
   };
 
@@ -171,20 +179,14 @@ const AppScene = ({ onClose }) => {
   return (
     <div ref={containerRef} style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
       {!arReady && showPopup && (
-  <div className="camera-modal">
-    <div className="camera-header">
-      <button onClick={onClose} className="cancel-button">✕</button>
-    </div>
-
-    <div className="camera-box">
-      <div className="grey-bar top-bar" />
-      <video ref={videoRef} playsInline muted autoPlay className="camera-video" />
-      <div className="grey-bar bottom-bar" />
-    </div>
-
-    <div className="camera-message">{message}</div>
-  </div>
-)}
+        <div className="camera-modal">
+          <div className="camera-header">
+            <button onClick={onClose} className="cancel-button">✕</button>
+          </div>
+          <video ref={videoRef} className="camera-feed" playsInline muted></video>
+          <div className="camera-message">{message}</div>
+        </div>
+      )}
     </div>
   );
 };
