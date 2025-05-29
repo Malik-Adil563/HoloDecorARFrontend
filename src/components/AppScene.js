@@ -7,6 +7,7 @@ import './AppScene.css';
 
 const AppScene = ({ onClose, modelUrl }) => {
   const containerRef = useRef(null);
+  const canvasRef = useRef(null);
   const videoRef = useRef(null);
   const [message, setMessage] = useState("Hold camera at the Empty Wall !");
   const [arReady, setARReady] = useState(false);
@@ -14,9 +15,8 @@ const AppScene = ({ onClose, modelUrl }) => {
   const [showUnsupportedModal, setShowUnsupportedModal] = useState(false);
   const [unsupportedType, setUnsupportedType] = useState('');
   const [deviceType, setDeviceType] = useState('');
-  const [model, setModel] = useState(null);
 
-  let camera, scene, renderer, controller;
+  let camera, scene, renderer, controller, model;
 
   useEffect(() => {
     detectDeviceType();
@@ -32,6 +32,7 @@ const AppScene = ({ onClose, modelUrl }) => {
     setDeviceType(type);
 
     const isARSupported = await checkARSupport();
+
     if (!isARSupported) {
       setUnsupportedType(type);
       setShowUnsupportedModal(true);
@@ -44,7 +45,7 @@ const AppScene = ({ onClose, modelUrl }) => {
     if (!navigator.xr) return false;
     try {
       return await navigator.xr.isSessionSupported('immersive-ar');
-    } catch {
+    } catch (err) {
       return false;
     }
   };
@@ -97,7 +98,7 @@ const AppScene = ({ onClose, modelUrl }) => {
             stopCameraStream();
             setShowPopup(false);
             setARReady(true);
-            startARScene();
+            setTimeout(startARScene, 1500);
           } else {
             setMessage("❌ No wall detected, Please try again in better lighting.");
             setTimeout(captureFrameAndDetectWall, 3000);
@@ -111,44 +112,17 @@ const AppScene = ({ onClose, modelUrl }) => {
   };
 
   const startARScene = async () => {
+    init();
+    animate();
+
     try {
       const session = await navigator.xr.requestSession('immersive-ar', {
-        requiredFeatures: ['hit-test', 'dom-overlay'],
-        domOverlay: { root: document.body }
+        requiredFeatures: ['hit-test'],
+        optionalFeatures: ['local-floor']
       });
 
-      init();
       renderer.xr.setSession(session);
-
-      const referenceSpace = await session.requestReferenceSpace('local');
-      const viewerSpace = await session.requestReferenceSpace('viewer');
-      const hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
-
-      let placed = false;
-
       loadModel();
-
-      renderer.setAnimationLoop((timestamp, frame) => {
-        if (frame && model && !placed) {
-          const hitTestResults = frame.getHitTestResults(hitTestSource);
-          if (hitTestResults.length > 0) {
-            const hit = hitTestResults[0];
-            const pose = hit.getPose(referenceSpace);
-
-            model.position.set(
-              pose.transform.position.x,
-              pose.transform.position.y,
-              pose.transform.position.z
-            );
-            model.rotation.set(0, Math.PI, 0);
-            scene.add(model);
-            placed = true;
-            setMessage("✅ Model placed. Use two fingers to rotate.");
-          }
-        }
-
-        renderer.render(scene, camera);
-      });
     } catch (error) {
       console.error("AR session failed", error);
       setMessage("⚠️ Could not start AR session.");
@@ -164,20 +138,19 @@ const AppScene = ({ onClose, modelUrl }) => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.xr.enabled = true;
 
-    containerRef.current.appendChild(renderer.domElement);
+    canvasRef.current = renderer.domElement;
+    containerRef.current.appendChild(canvasRef.current);
 
     const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+    light.position.set(0.5, 1, 0.25);
     scene.add(light);
 
     controller = renderer.xr.getController(0);
+    // If you want the model to stay fixed and not move on tap, comment out this line:
+    //// controller.addEventListener('select', onSelect);
     scene.add(controller);
 
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
+    window.addEventListener('resize', onWindowResize);
     window.addEventListener('wheel', onZoom);
   };
 
@@ -191,9 +164,11 @@ const AppScene = ({ onClose, modelUrl }) => {
     loader.load(
       modelUrl,
       (gltf) => {
-        const obj = gltf.scene;
-        obj.scale.set(1.27, 0.9144, 0.76);
-        setModel(obj);
+        model = gltf.scene;
+        model.scale.set(1.27, 0.9144, 0.76);
+        model.position.set(0, -0.1, -0.8);
+        scene.add(model);
+        setMessage("✅ Model placed in AR.");
       },
       undefined,
       (error) => {
@@ -201,6 +176,17 @@ const AppScene = ({ onClose, modelUrl }) => {
         setMessage("⚠️ Failed to load model.");
       }
     );
+  };
+
+  const animate = () => {
+    renderer.setAnimationLoop(() => renderer.render(scene, camera));
+  };
+
+  const onSelect = () => {
+    if (model) {
+      const position = new THREE.Vector3().set(0, 0, -0.5).applyMatrix4(controller.matrixWorld);
+      model.position.copy(position);
+    }
   };
 
   const onZoom = (event) => {
@@ -211,14 +197,21 @@ const AppScene = ({ onClose, modelUrl }) => {
     }
   };
 
+  const onWindowResize = () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  };
+
   const renderUnsupportedModal = () => {
     if (!showUnsupportedModal) return null;
-
+  
     const handleClose = () => {
       setShowUnsupportedModal(false);
+      // Prevent camera popup if AR is unsupported
       setShowPopup(false);
     };
-
+  
     if (unsupportedType === 'pc') {
       return (
         <div className="unsupported-modal">
@@ -238,11 +231,11 @@ const AppScene = ({ onClose, modelUrl }) => {
         </div>
       );
     }
-
+  
     const link = unsupportedType === 'ios'
       ? 'https://apps.apple.com/pk/app/webxr-viewer/id1295998056'
       : 'https://play.google.com/store/apps/details?id=com.chrome.canary&pcampaignid=web_share';
-
+  
     return (
       <div className="unsupported-modal">
         <button className="close-button" onClick={handleClose}>✕</button>
@@ -253,7 +246,7 @@ const AppScene = ({ onClose, modelUrl }) => {
         </a>
       </div>
     );
-  };
+  };  
 
   return (
     <div ref={containerRef} style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
