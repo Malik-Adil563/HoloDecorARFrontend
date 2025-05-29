@@ -1,4 +1,5 @@
-// At the top of the file
+// AppScene.js
+
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -20,34 +21,33 @@ const AppScene = ({ onClose, modelUrl }) => {
   let camera, scene, renderer, controller, model;
 
   useEffect(() => {
-    const runChecks = async () => {
-      const ua = navigator.userAgent;
-      let type = 'pc';
-      if (/iPhone|iPad|iPod/i.test(ua)) type = 'ios';
-      else if (/Android/i.test(ua)) type = 'android';
-
-      setDeviceType(type);
-
-      const arSupported = await checkARSupport();
-
-      if (!arSupported) {
-        setUnsupportedType(type);
-        setShowUnsupportedModal(true);
-      } else {
-        startSimpleCameraAndDetect();
-      }
-    };
-
-    runChecks();
+    detectDeviceType();
   }, []);
 
-  const checkARSupport = async () => {
-    if (!navigator.xr || !navigator.xr.isSessionSupported) return false;
+  const detectDeviceType = async () => {
+    const ua = navigator.userAgent;
+    let type = 'pc';
 
+    if (/iPhone|iPad|iPod/i.test(ua)) type = 'ios';
+    else if (/Android/i.test(ua)) type = 'android';
+
+    setDeviceType(type);
+
+    const isARSupported = await checkARSupport();
+
+    if (!isARSupported) {
+      setUnsupportedType(type);
+      setShowUnsupportedModal(true);
+    } else {
+      startSimpleCameraAndDetect();
+    }
+  };
+
+  const checkARSupport = async () => {
+    if (!navigator.xr) return false;
     try {
       return await navigator.xr.isSessionSupported('immersive-ar');
     } catch (err) {
-      console.warn("AR support check failed:", err);
       return false;
     }
   };
@@ -245,7 +245,7 @@ const AppScene = ({ onClose, modelUrl }) => {
 
   return (
     <div ref={containerRef} style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
-      {!arReady && showPopup && (
+      {!arReady && showPopup && !showUnsupportedModal && (
         <div className="camera-modal">
           <div className="camera-header">
             <button onClick={onClose} className="cancel-button">✕</button>
