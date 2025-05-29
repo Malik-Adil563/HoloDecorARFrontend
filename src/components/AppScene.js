@@ -1,5 +1,3 @@
-// AppScene.js
-
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -9,7 +7,6 @@ import './AppScene.css';
 
 const AppScene = ({ onClose, modelUrl }) => {
   const containerRef = useRef(null);
-  const canvasRef = useRef(null);
   const videoRef = useRef(null);
   const [message, setMessage] = useState("Hold camera at the Empty Wall !");
   const [arReady, setARReady] = useState(false);
@@ -17,8 +14,9 @@ const AppScene = ({ onClose, modelUrl }) => {
   const [showUnsupportedModal, setShowUnsupportedModal] = useState(false);
   const [unsupportedType, setUnsupportedType] = useState('');
   const [deviceType, setDeviceType] = useState('');
+  const [model, setModel] = useState(null);
 
-  let camera, scene, renderer, controller, model;
+  let camera, scene, renderer, controller;
 
   useEffect(() => {
     detectDeviceType();
@@ -34,7 +32,6 @@ const AppScene = ({ onClose, modelUrl }) => {
     setDeviceType(type);
 
     const isARSupported = await checkARSupport();
-
     if (!isARSupported) {
       setUnsupportedType(type);
       setShowUnsupportedModal(true);
@@ -47,7 +44,7 @@ const AppScene = ({ onClose, modelUrl }) => {
     if (!navigator.xr) return false;
     try {
       return await navigator.xr.isSessionSupported('immersive-ar');
-    } catch (err) {
+    } catch {
       return false;
     }
   };
@@ -100,7 +97,7 @@ const AppScene = ({ onClose, modelUrl }) => {
             stopCameraStream();
             setShowPopup(false);
             setARReady(true);
-            setTimeout(startARScene, 1500);
+            startARScene();
           } else {
             setMessage("❌ No wall detected, Please try again in better lighting.");
             setTimeout(captureFrameAndDetectWall, 3000);
@@ -114,49 +111,49 @@ const AppScene = ({ onClose, modelUrl }) => {
   };
 
   const startARScene = async () => {
-    init();
-  
     try {
       const session = await navigator.xr.requestSession('immersive-ar', {
         requiredFeatures: ['hit-test', 'dom-overlay'],
-        optionalFeatures: ['local-floor'],
         domOverlay: { root: document.body }
       });
-  
+
+      init();
       renderer.xr.setSession(session);
-  
+
       const referenceSpace = await session.requestReferenceSpace('local');
       const viewerSpace = await session.requestReferenceSpace('viewer');
-  
       const hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
-  
+
       let placed = false;
-  
+
+      loadModel();
+
       renderer.setAnimationLoop((timestamp, frame) => {
-        if (frame) {
+        if (frame && model && !placed) {
           const hitTestResults = frame.getHitTestResults(hitTestSource);
-          if (hitTestResults.length > 0 && !placed) {
+          if (hitTestResults.length > 0) {
             const hit = hitTestResults[0];
             const pose = hit.getPose(referenceSpace);
-            if (!model) return;
-  
-            model.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
-            model.rotation.set(0, Math.PI, 0); // Initial rotation (facing forward)
+
+            model.position.set(
+              pose.transform.position.x,
+              pose.transform.position.y,
+              pose.transform.position.z
+            );
+            model.rotation.set(0, Math.PI, 0);
             scene.add(model);
             placed = true;
             setMessage("✅ Model placed. Use two fingers to rotate.");
           }
         }
-  
+
         renderer.render(scene, camera);
       });
-  
-      loadModel();
     } catch (error) {
       console.error("AR session failed", error);
       setMessage("⚠️ Could not start AR session.");
     }
-  };  
+  };
 
   const init = () => {
     scene = new THREE.Scene();
@@ -166,51 +163,21 @@ const AppScene = ({ onClose, modelUrl }) => {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.xr.enabled = true;
-    let initialRotation = 0;
-    let isRotating = false;
 
-    canvasRef.current.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 2 && model) {
-      isRotating = true;
-      initialRotation = getTouchAngle(e.touches[0], e.touches[1]);
-    }
-    });
-
-    canvasRef.current.addEventListener('touchmove', (e) => {
-    if (isRotating && e.touches.length === 2 && model) {
-      const newRotation = getTouchAngle(e.touches[0], e.touches[1]);
-      const delta = newRotation - initialRotation;
-      model.rotation.y += delta;
-      initialRotation = newRotation;
-    }
-    });
-
-    canvasRef.current.addEventListener('touchend', (e) => {
-    if (e.touches.length < 2) {
-      isRotating = false;
-    }
-    });
-
-    const getTouchAngle = (touch1, touch2) => {
-    const dx = touch2.clientX - touch1.clientX;
-    const dy = touch2.clientY - touch1.clientY;
-    return Math.atan2(dy, dx);
-  };
-
-
-    canvasRef.current = renderer.domElement;
-    containerRef.current.appendChild(canvasRef.current);
+    containerRef.current.appendChild(renderer.domElement);
 
     const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-    light.position.set(0.5, 1, 0.25);
     scene.add(light);
 
     controller = renderer.xr.getController(0);
-    // If you want the model to stay fixed and not move on tap, comment out this line:
-    //// controller.addEventListener('select', onSelect);
     scene.add(controller);
 
-    window.addEventListener('resize', onWindowResize);
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
     window.addEventListener('wheel', onZoom);
   };
 
@@ -224,11 +191,9 @@ const AppScene = ({ onClose, modelUrl }) => {
     loader.load(
       modelUrl,
       (gltf) => {
-        model = gltf.scene;
-        model.scale.set(1.27, 0.9144, 0.76);
-        model.position.set(0, -0.1, -0.8);
-        scene.add(model);
-        setMessage("✅ Model placed in AR.");
+        const obj = gltf.scene;
+        obj.scale.set(1.27, 0.9144, 0.76);
+        setModel(obj);
       },
       undefined,
       (error) => {
@@ -236,17 +201,6 @@ const AppScene = ({ onClose, modelUrl }) => {
         setMessage("⚠️ Failed to load model.");
       }
     );
-  };
-
-  const animate = () => {
-    renderer.setAnimationLoop(() => renderer.render(scene, camera));
-  };
-
-  const onSelect = () => {
-    if (model) {
-      const position = new THREE.Vector3().set(0, 0, -0.5).applyMatrix4(controller.matrixWorld);
-      model.position.copy(position);
-    }
   };
 
   const onZoom = (event) => {
@@ -257,21 +211,14 @@ const AppScene = ({ onClose, modelUrl }) => {
     }
   };
 
-  const onWindowResize = () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  };
-
   const renderUnsupportedModal = () => {
     if (!showUnsupportedModal) return null;
-  
+
     const handleClose = () => {
       setShowUnsupportedModal(false);
-      // Prevent camera popup if AR is unsupported
       setShowPopup(false);
     };
-  
+
     if (unsupportedType === 'pc') {
       return (
         <div className="unsupported-modal">
@@ -291,11 +238,11 @@ const AppScene = ({ onClose, modelUrl }) => {
         </div>
       );
     }
-  
+
     const link = unsupportedType === 'ios'
       ? 'https://apps.apple.com/pk/app/webxr-viewer/id1295998056'
       : 'https://play.google.com/store/apps/details?id=com.chrome.canary&pcampaignid=web_share';
-  
+
     return (
       <div className="unsupported-modal">
         <button className="close-button" onClick={handleClose}>✕</button>
@@ -306,7 +253,7 @@ const AppScene = ({ onClose, modelUrl }) => {
         </a>
       </div>
     );
-  };  
+  };
 
   return (
     <div ref={containerRef} style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
