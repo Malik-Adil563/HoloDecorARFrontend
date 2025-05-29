@@ -20,41 +20,34 @@ const AppScene = ({ onClose, modelUrl }) => {
   let camera, scene, renderer, controller, model;
 
   useEffect(() => {
-    detectDeviceType();
+    const runChecks = async () => {
+      const ua = navigator.userAgent;
+      let type = 'pc';
+      if (/iPhone|iPad|iPod/i.test(ua)) type = 'ios';
+      else if (/Android/i.test(ua)) type = 'android';
+
+      setDeviceType(type);
+
+      const arSupported = await checkARSupport();
+
+      if (!arSupported) {
+        setUnsupportedType(type);
+        setShowUnsupportedModal(true);
+      } else {
+        startSimpleCameraAndDetect();
+      }
+    };
+
+    runChecks();
   }, []);
 
-  const detectDeviceType = async () => {
-    const ua = navigator.userAgent;
-    let type = 'pc';
-
-    if (/iPhone|iPad|iPod/i.test(ua)) type = 'ios';
-    else if (/Android/i.test(ua)) type = 'android';
-
-    setDeviceType(type);
-
-    const isARSupported = await checkARSupport();
-
-    if (!isARSupported) {
-      if (type === 'pc') {
-        setUnsupportedType('pc');
-        setShowUnsupportedModal(true);
-      } else if (type === 'ios') {
-        setUnsupportedType('ios');
-        setShowUnsupportedModal(true);
-      } else if (type === 'android') {
-        setUnsupportedType('android');
-        setShowUnsupportedModal(true);
-      }
-    } else {
-      startSimpleCameraAndDetect();
-    }
-  };
-
   const checkARSupport = async () => {
-    if (!navigator.xr) return false;
+    if (!navigator.xr || !navigator.xr.isSessionSupported) return false;
+
     try {
       return await navigator.xr.isSessionSupported('immersive-ar');
     } catch (err) {
+      console.warn("AR support check failed:", err);
       return false;
     }
   };
