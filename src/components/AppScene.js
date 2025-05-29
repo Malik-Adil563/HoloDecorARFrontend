@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import 'webxr-polyfill';
-import QRCode from 'qrcode.react'; // Install this using `npm install qrcode.react`
+import QRCode from 'qrcode.react';
 import './AppScene.css';
 
 const AppScene = ({ onClose, modelUrl }) => {
@@ -184,6 +184,10 @@ const AppScene = ({ onClose, modelUrl }) => {
         setMessage("⚠️ Failed to load model.");
       }
     );
+  };
+  
+  const animate = () => {
+    renderer.setAnimationLoop(() => renderer.render(scene, camera));
   };
 
   const onSelect = () => {
