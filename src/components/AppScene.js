@@ -148,7 +148,8 @@ const AppScene = ({ onClose, modelUrl }) => {
     scene.add(light);
 
     controller = renderer.xr.getController(0);
-    controller.addEventListener('select', onSelect);
+    // If you want the model to stay fixed and not move on tap, comment out this line:
+    //// controller.addEventListener('select', onSelect);
     scene.add(controller);
 
     window.addEventListener('resize', onWindowResize);
