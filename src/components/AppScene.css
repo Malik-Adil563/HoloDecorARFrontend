@@ -159,4 +159,46 @@
   max-width: 90%;
   text-align: center;
 }
+.unsupported-modal {
+  position: absolute;
+  width: 60vw;
+  height: auto;
+  background: white;
+  top: 20vh;
+  left: 20vw;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  text-align: center;
+}
 
+.qr-wrapper {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 2rem;
+}
+
+.qr-section h4 {
+  margin-bottom: 1rem;
+}
+
+.close-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.download-button {
+  display: inline-block;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #007bff;
+  color: white;
+  border-radius: 0.5rem;
+  text-decoration: none;
+}
