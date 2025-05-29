@@ -11,7 +11,7 @@ const AppScene = ({ onClose, modelUrl }) => {
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
   const videoRef = useRef(null);
-  const [message, setMessage] = useState("Hold camera at the scene...");
+  const [message, setMessage] = useState("Hold camera at the Empty Wall !");
   const [arReady, setARReady] = useState(false);
   const [showPopup, setShowPopup] = useState(true);
   const [showUnsupportedModal, setShowUnsupportedModal] = useState(false);
