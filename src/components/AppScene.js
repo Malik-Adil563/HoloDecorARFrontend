@@ -1,7 +1,9 @@
+// At the top of the file
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import 'webxr-polyfill';
+import QRCode from 'qrcode.react'; // Install this using `npm install qrcode.react`
 import './AppScene.css';
 
 const AppScene = ({ onClose, modelUrl }) => {
@@ -11,13 +13,51 @@ const AppScene = ({ onClose, modelUrl }) => {
   const [message, setMessage] = useState("Hold camera at the scene...");
   const [arReady, setARReady] = useState(false);
   const [showPopup, setShowPopup] = useState(true);
+  const [showUnsupportedModal, setShowUnsupportedModal] = useState(false);
+  const [unsupportedType, setUnsupportedType] = useState('');
+  const [deviceType, setDeviceType] = useState('');
 
   let camera, scene, renderer, controller, model;
 
   useEffect(() => {
-    startSimpleCameraAndDetect();
-    return () => stopCameraStream();
+    detectDeviceType();
   }, []);
+
+  const detectDeviceType = async () => {
+    const ua = navigator.userAgent;
+    let type = 'pc';
+
+    if (/iPhone|iPad|iPod/i.test(ua)) type = 'ios';
+    else if (/Android/i.test(ua)) type = 'android';
+
+    setDeviceType(type);
+
+    const isARSupported = await checkARSupport();
+
+    if (!isARSupported) {
+      if (type === 'pc') {
+        setUnsupportedType('pc');
+        setShowUnsupportedModal(true);
+      } else if (type === 'ios') {
+        setUnsupportedType('ios');
+        setShowUnsupportedModal(true);
+      } else if (type === 'android') {
+        setUnsupportedType('android');
+        setShowUnsupportedModal(true);
+      }
+    } else {
+      startSimpleCameraAndDetect();
+    }
+  };
+
+  const checkARSupport = async () => {
+    if (!navigator.xr) return false;
+    try {
+      return await navigator.xr.isSessionSupported('immersive-ar');
+    } catch (err) {
+      return false;
+    }
+  };
 
   const stopCameraStream = () => {
     const stream = videoRef.current?.srcObject;
@@ -81,11 +121,6 @@ const AppScene = ({ onClose, modelUrl }) => {
   };
 
   const startARScene = async () => {
-    if (!navigator.xr || !(await navigator.xr.isSessionSupported('immersive-ar'))) {
-      setMessage("Your device does not support WebXR.");
-      return;
-    }
-
     init();
     animate();
 
@@ -172,8 +207,43 @@ const AppScene = ({ onClose, modelUrl }) => {
     renderer.setSize(window.innerWidth, window.innerHeight);
   };
 
-  const animate = () => {
-    renderer.setAnimationLoop(() => renderer.render(scene, camera));
+  const renderUnsupportedModal = () => {
+    if (!showUnsupportedModal) return null;
+
+    if (unsupportedType === 'pc') {
+      return (
+        <div className="unsupported-modal">
+          <button className="close-button" onClick={() => setShowUnsupportedModal(false)}>✕</button>
+          <h2>AR is not supported on this device.</h2>
+          <p>Scan the QR code below using your smartphone to experience AR:</p>
+          <div className="qr-wrapper">
+            <div className="qr-section">
+              <h4>iOS Users</h4>
+              <QRCode value={`https://apps.apple.com/pk/app/webxr-viewer/id1295998056?productUrl=${encodeURIComponent(window.location.href)}`} />
+            </div>
+            <div className="qr-section">
+              <h4>Android Users</h4>
+              <QRCode value={`https://play.google.com/store/apps/details?id=com.chrome.canary&productUrl=${encodeURIComponent(window.location.href)}`} />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const link = unsupportedType === 'ios'
+      ? 'https://apps.apple.com/pk/app/webxr-viewer/id1295998056'
+      : 'https://play.google.com/store/apps/details?id=com.chrome.canary&pcampaignid=web_share';
+
+    return (
+      <div className="unsupported-modal">
+        <button className="close-button" onClick={() => setShowUnsupportedModal(false)}>✕</button>
+        <h2>AR is not supported on your device.</h2>
+        <p>To experience AR features, click the link below:</p>
+        <a href={link} className="download-button" target="_blank" rel="noopener noreferrer">
+          Click here to get WebXR support
+        </a>
+      </div>
+    );
   };
 
   return (
@@ -187,6 +257,7 @@ const AppScene = ({ onClose, modelUrl }) => {
           <div className="camera-message">{message}</div>
         </div>
       )}
+      {renderUnsupportedModal()}
     </div>
   );
 };
