@@ -206,11 +206,17 @@ const AppScene = ({ onClose, modelUrl }) => {
 
   const renderUnsupportedModal = () => {
     if (!showUnsupportedModal) return null;
-
+  
+    const handleClose = () => {
+      setShowUnsupportedModal(false);
+      // Prevent camera popup if AR is unsupported
+      setShowPopup(false);
+    };
+  
     if (unsupportedType === 'pc') {
       return (
         <div className="unsupported-modal">
-          <button className="close-button" onClick={() => setShowUnsupportedModal(false)}>✕</button>
+          <button className="close-button" onClick={handleClose}>✕</button>
           <h2>AR is not supported on this device.</h2>
           <p>Scan the QR code below using your smartphone to experience AR:</p>
           <div className="qr-wrapper">
@@ -226,14 +232,14 @@ const AppScene = ({ onClose, modelUrl }) => {
         </div>
       );
     }
-
+  
     const link = unsupportedType === 'ios'
       ? 'https://apps.apple.com/pk/app/webxr-viewer/id1295998056'
       : 'https://play.google.com/store/apps/details?id=com.chrome.canary&pcampaignid=web_share';
-
+  
     return (
       <div className="unsupported-modal">
-        <button className="close-button" onClick={() => setShowUnsupportedModal(false)}>✕</button>
+        <button className="close-button" onClick={handleClose}>✕</button>
         <h2>AR is not supported on your device.</h2>
         <p>To experience AR features, click the link below:</p>
         <a href={link} className="download-button" target="_blank" rel="noopener noreferrer">
@@ -241,7 +247,7 @@ const AppScene = ({ onClose, modelUrl }) => {
         </a>
       </div>
     );
-  };
+  };  
 
   return (
     <div ref={containerRef} style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
