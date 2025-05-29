@@ -115,21 +115,48 @@ const AppScene = ({ onClose, modelUrl }) => {
 
   const startARScene = async () => {
     init();
-    animate();
-
+  
     try {
       const session = await navigator.xr.requestSession('immersive-ar', {
-        requiredFeatures: ['hit-test'],
-        optionalFeatures: ['local-floor']
+        requiredFeatures: ['hit-test', 'dom-overlay'],
+        optionalFeatures: ['local-floor'],
+        domOverlay: { root: document.body }
       });
-
+  
       renderer.xr.setSession(session);
+  
+      const referenceSpace = await session.requestReferenceSpace('local');
+      const viewerSpace = await session.requestReferenceSpace('viewer');
+  
+      const hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
+  
+      let placed = false;
+  
+      renderer.setAnimationLoop((timestamp, frame) => {
+        if (frame) {
+          const hitTestResults = frame.getHitTestResults(hitTestSource);
+          if (hitTestResults.length > 0 && !placed) {
+            const hit = hitTestResults[0];
+            const pose = hit.getPose(referenceSpace);
+            if (!model) return;
+  
+            model.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
+            model.rotation.set(0, Math.PI, 0); // Initial rotation (facing forward)
+            scene.add(model);
+            placed = true;
+            setMessage("✅ Model placed. Use two fingers to rotate.");
+          }
+        }
+  
+        renderer.render(scene, camera);
+      });
+  
       loadModel();
     } catch (error) {
       console.error("AR session failed", error);
       setMessage("⚠️ Could not start AR session.");
     }
-  };
+  };  
 
   const init = () => {
     scene = new THREE.Scene();
@@ -139,6 +166,37 @@ const AppScene = ({ onClose, modelUrl }) => {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.xr.enabled = true;
+    let initialRotation = 0;
+    let isRotating = false;
+
+    canvasRef.current.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2 && model) {
+      isRotating = true;
+      initialRotation = getTouchAngle(e.touches[0], e.touches[1]);
+    }
+    });
+
+    canvasRef.current.addEventListener('touchmove', (e) => {
+    if (isRotating && e.touches.length === 2 && model) {
+      const newRotation = getTouchAngle(e.touches[0], e.touches[1]);
+      const delta = newRotation - initialRotation;
+      model.rotation.y += delta;
+      initialRotation = newRotation;
+    }
+    });
+
+    canvasRef.current.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) {
+      isRotating = false;
+    }
+    });
+
+    const getTouchAngle = (touch1, touch2) => {
+    const dx = touch2.clientX - touch1.clientX;
+    const dy = touch2.clientY - touch1.clientY;
+    return Math.atan2(dy, dx);
+  };
+
 
     canvasRef.current = renderer.domElement;
     containerRef.current.appendChild(canvasRef.current);
