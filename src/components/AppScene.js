@@ -58,7 +58,7 @@ const AppScene = ({ onClose, modelUrl }) => {
   };
 
   const startSimpleCameraAndDetect = async () => {
-    setMessage("Analyzing environment before AR...");
+    setMessage("Hold at the Empty Wall properly for detection...");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       videoRef.current.srcObject = stream;
@@ -96,13 +96,13 @@ const AppScene = ({ onClose, modelUrl }) => {
         .then(res => res.json())
         .then(data => {
           if (data.wallDetected) {
-            setMessage("✅ Wall detected. Starting AR...");
+            setMessage("✅ Wall detected, Starting AR...");
             stopCameraStream();
             setShowPopup(false);
             setARReady(true);
             setTimeout(startARScene, 1500);
           } else {
-            setMessage("❌ No wall detected. Try again.");
+            setMessage("❌ No wall detected, Please try again in better lighting.");
             setTimeout(captureFrameAndDetectWall, 3000);
           }
         })
@@ -218,7 +218,7 @@ const AppScene = ({ onClose, modelUrl }) => {
         <div className="unsupported-modal">
           <button className="close-button" onClick={handleClose}>✕</button>
           <h2>AR is not supported on this device.</h2>
-          <p>Scan the QR code below using your smartphone to experience AR:</p>
+          <p>Scan the QR code below using your smartphone to place Product in your Space:</p>
           <div className="qr-wrapper">
             <div className="qr-section">
               <h4>iOS Users</h4>
