@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import 'webxr-polyfill';
-import QRCode from 'qrcode.react';
+import QRCode from 'react-qr-code';
 import './AppScene.css';
 
 const AppScene = ({ onClose, modelUrl }) => {
@@ -185,7 +185,7 @@ const AppScene = ({ onClose, modelUrl }) => {
       }
     );
   };
-  
+
   const animate = () => {
     renderer.setAnimationLoop(() => renderer.render(scene, camera));
   };
