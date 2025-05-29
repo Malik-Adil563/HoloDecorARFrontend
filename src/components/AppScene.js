@@ -258,7 +258,7 @@ const AppScene = ({ onClose, modelUrl }) => {
       return (
         <div className="unsupported-modal">
           <button className="close-button" onClick={handleClose}>✕</button>
-          <h2>AR is not supported on this device.</h2>
+          <h2>This Feature is not supported on this device.</h2>
           <p>Scan the QR code below using your smartphone to place Product in your Space:</p>
           <div className="qr-wrapper">
             <div className="qr-section">
