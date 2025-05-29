@@ -281,10 +281,10 @@ const AppScene = ({ onClose, modelUrl }) => {
     return (
       <div className="unsupported-modal">
         <button className="close-button" onClick={handleClose}>✕</button>
-        <h2>AR is not supported on your device.</h2>
-        <p>To experience AR features, click the link below:</p>
+        <h2>This Feature is not supported on your device.</h2>
+        <p>To experience this feature, click the link below:</p>
         <a href={link} className="download-button" target="_blank" rel="noopener noreferrer">
-          Click here to get WebXR support
+          Get the Supported Browser
         </a>
       </div>
     );
