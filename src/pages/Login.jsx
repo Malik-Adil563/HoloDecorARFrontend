@@ -69,12 +69,16 @@ const Login = ({ setIsAuthenticated }) => {
               />
             </div>
 
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <span>
-                New here? <Link to="/register" className="text-decoration-none text-primary">Register</Link>
-              </span>
-              <button type="submit" className="btn btn-dark px-4">Login</button>
-            </div>
+            <div className="mb-2 text-end">
+  <Link to="/forgot" className="text-decoration-none text-danger">Forgot your password?</Link>
+</div>
+
+<div className="d-flex justify-content-between align-items-center mb-3">
+  <span>
+    New here? <Link to="/register" className="text-decoration-none text-primary">Register</Link>
+  </span>
+  <button type="submit" className="btn btn-dark px-4">Login</button>
+</div>
           </form>
         </div>
       </div>
