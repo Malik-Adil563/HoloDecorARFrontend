@@ -9,3 +9,5 @@ export { default as Register } from './Register';
 export { default as Checkout } from './Checkout';
 export { default as PageNotFound } from './PageNotFound';
 export { default as BlogPage } from './BlogPage';
+export { default as Forgot } from './Forgot';
+export { default as ResetPassword } from './ResetPassword';
