@@ -7,13 +7,7 @@ import { Provider } from 'react-redux';
 import store from './redux/store';
 import 'aos/dist/aos.css';
 
-import NotificationToast from './components/NotificationToast.js';
-
-import {
-  Home, Product, Products, AboutPage, ContactPage, Cart,
-  Login, Register, Checkout, PageNotFound, BlogPage,
-  Forgot, ResetPassword, AdminDashboard
-} from "./pages";
+import { Home, Product, Products, AboutPage, ContactPage, Cart, Login, Register, Checkout, PageNotFound, BlogPage, Forgot, ResetPassword, AdminDashboard } from "./pages";
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -21,8 +15,6 @@ const App = () => {
   return (
     <BrowserRouter>
       <Provider store={store}>
-        <NotificationToast />
-
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/product" element={<Products />} />
