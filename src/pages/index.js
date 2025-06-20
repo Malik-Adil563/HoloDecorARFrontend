@@ -11,3 +11,4 @@ export { default as PageNotFound } from './PageNotFound';
 export { default as BlogPage } from './BlogPage';
 export { default as Forgot } from './Forgot';
 export { default as ResetPassword } from './ResetPassword';
+export { default as AdminDashboard } from './AdminDashboard';

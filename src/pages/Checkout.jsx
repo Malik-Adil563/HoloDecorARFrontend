@@ -25,7 +25,7 @@ const Checkout = () => {
       const item = state[0];
       setProduct({
         name: item.title,
-        price: item.price,
+        price: Math.round(item.price + 30), // item + shipping
       });
     }
   }, [state]);
@@ -45,7 +45,7 @@ const Checkout = () => {
     };
 
     try {
-      const response = await fetch('http://localhost:8000/payment', {
+      const response = await fetch('https://ecommerce-for-holo-decor.vercel.app/payment', {
         method: "POST",
         headers,
         body: JSON.stringify(body)
@@ -63,9 +63,12 @@ const Checkout = () => {
         setTimeout(() => {
           navigate('/'); // Redirect to homepage
         }, 2000); // Delay for 2 seconds
+      } else {
+        alert("Payment failed: " + data.error);
       }
     } catch (error) {
       console.error("Error making payment:", error);
+      alert("Something went wrong during payment");
     }
   };
 
@@ -246,7 +249,7 @@ const Checkout = () => {
                           <option>Sindh</option>
                           <option>Balochistan</option>
                           <option>ICT</option>
-                          <option>Giligit</option>
+                          <option>Gilgit</option>
                         </select>
                         <div className="invalid-feedback">
                           Please provide a valid state.

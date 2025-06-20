@@ -13,13 +13,29 @@ const Footer = () => {
     setError(isValid || value === '' ? '' : 'Invalid email format');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!error && email) {
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-      console.log('Subscribed with:', email);
-      setEmail('');
+      try {
+        const response = await fetch('https://ecommerce-for-holo-decor.vercel.app/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          console.log('Subscribed with:', data.email);
+          setShowToast(true);
+          setTimeout(() => setShowToast(false), 3000);
+          setEmail('');
+        } else {
+          alert(data.error || 'Subscription failed');
+        }
+      } catch (err) {
+        console.error('Subscription error:', err);
+        alert('Something went wrong');
+      }
     }
   };
 
@@ -102,7 +118,6 @@ const Footer = () => {
         </div>
 
         <hr className="my-3" style={{ borderTop: '1px solid #ccc' }} />
-
         <div className="text-center small">&copy; 2025 Holo Decor. All Rights Reserved.</div>
       </div>
 
