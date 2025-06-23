@@ -1,4 +1,3 @@
-// Responsive Full Admin Dashboard with All Functionality
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
@@ -79,7 +78,7 @@ const Sidebar = ({ activeTab, onTabChange, onLogout }) => {
 };
 
 // --- TopBar Component ---
-const TopBar = ({ activeTab }) => {
+const TopBar = ({ activeTab, onToggleSidebar }) => {
   const map = {
     dashboard: 'Dashboard',
     users: 'Users Management',
@@ -93,22 +92,13 @@ const TopBar = ({ activeTab }) => {
   return (
     <div className="bg-white shadow-sm p-3 d-flex justify-content-between align-items-center w-100">
       <h5 className="m-0">{map[activeTab] || 'Dashboard'}</h5>
-      <Menu />
+      <Menu className="d-md-none" onClick={onToggleSidebar} style={{ cursor: 'pointer' }} />
     </div>
   );
 };
 
-// --- AdminDashboard Component ---
-const AdminDashboard = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard');
-
-  const handleLogout = () => setIsAuthenticated(false);
-
-  // Import all functional sections here (UsersSection, ProductsSection, etc.)
-  // Assume they are defined exactly as in original 538-line code
-  // For brevity, they are assumed imported/defined here
-  const UsersSection = () => {
+// --- Placeholder Section Components (reuse your existing ones) ---
+const UsersSection = () => {
   const [users, setUsers] = useState([]);
   const [editUser, setEditUser] = useState(null);
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
@@ -493,6 +483,14 @@ const NotificationSender = () => {
   );
 };
 
+// --- Main Component ---
+const AdminDashboard = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [showSidebar, setShowSidebar] = useState(false);
+
+  const handleLogout = () => setIsAuthenticated(false);
+
   const renderSection = () => {
     switch (activeTab) {
       case 'dashboard': return <DashboardSection />;
@@ -512,11 +510,35 @@ const NotificationSender = () => {
   return (
     <div className="container-fluid">
       <div className="row flex-nowrap min-vh-100">
+        {/* Desktop Sidebar */}
         <div className="col-12 col-md-3 col-lg-2 bg-light d-md-block d-none p-0 border-end">
           <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onLogout={handleLogout} />
         </div>
+
+        {/* Mobile Sidebar Overlay */}
+        {showSidebar && (
+          <div className="position-fixed top-0 start-0 w-75 h-100 bg-white shadow-lg z-3" style={{ zIndex: 1050 }}>
+            <div className="p-3 border-bottom d-flex justify-content-between align-items-center">
+              <h5 className="m-0">Menu</h5>
+              <button className="btn btn-sm btn-close" onClick={() => setShowSidebar(false)}></button>
+            </div>
+            <Sidebar
+              activeTab={activeTab}
+              onTabChange={(tab) => {
+                setActiveTab(tab);
+                setShowSidebar(false);
+              }}
+              onLogout={() => {
+                setIsAuthenticated(false);
+                setShowSidebar(false);
+              }}
+            />
+          </div>
+        )}
+
+        {/* Main Content */}
         <div className="col-12 col-md-9 col-lg-10 p-0">
-          <TopBar activeTab={activeTab} />
+          <TopBar activeTab={activeTab} onToggleSidebar={() => setShowSidebar(true)} />
           <div className="p-3">
             {renderSection()}
           </div>
