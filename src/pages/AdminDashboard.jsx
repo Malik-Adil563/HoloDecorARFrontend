@@ -1,3 +1,4 @@
+// Responsive Full Admin Dashboard with All Functionality
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
@@ -8,6 +9,7 @@ import {
 
 const API = 'https://ecommerce-for-holo-decor.vercel.app';
 
+// --- Login Component ---
 const Login = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,42 +17,23 @@ const Login = ({ onLogin }) => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    axios.get(`${API}/getAdmins`)
-      .then(res => setAdmins(res.data))
-      .catch(err => console.error(err));
+    axios.get(`${API}/getAdmins`).then(res => setAdmins(res.data)).catch(console.error);
   }, []);
 
   const handleLogin = (e) => {
     e.preventDefault();
     const matched = admins.find(a => a.email === email && a.password === password);
-    if (matched) {
-      onLogin();
-    } else {
-      setError('Invalid credentials');
-    }
+    if (matched) onLogin();
+    else setError('Invalid credentials');
   };
 
   return (
-    <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
-      <div className="card shadow p-4" style={{ maxWidth: '400px', width: '100%' }}>
+    <div className="container d-flex justify-content-center align-items-center vh-100">
+      <div className="card shadow p-4 w-100" style={{ maxWidth: '400px' }}>
         <h4 className="mb-3 text-center">Admin Login</h4>
         <form onSubmit={handleLogin}>
-          <input
-            type="email"
-            className="form-control mb-3"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            className="form-control mb-3"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <input type="email" className="form-control mb-3" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <input type="password" className="form-control mb-3" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           {error && <div className="text-danger text-center mb-2">{error}</div>}
           <button className="btn btn-primary w-100" type="submit">Login</button>
         </form>
@@ -59,6 +42,7 @@ const Login = ({ onLogin }) => {
   );
 };
 
+// --- Sidebar Component ---
 const Sidebar = ({ activeTab, onTabChange, onLogout }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: TrendingUp },
@@ -70,31 +54,31 @@ const Sidebar = ({ activeTab, onTabChange, onLogout }) => {
     { id: 'contact', label: 'Contact Messages', icon: Mail },
     { id: 'notification', label: 'Real-Time Notification', icon: Bell },
   ];
+
   return (
-    <div className="bg-light border-end vh-100 d-flex flex-column justify-content-between p-3" style={{ minWidth: '250px' }}>
-      <div>
-        <h4 className="fw-bold mb-4">HoloDecor Admin</h4>
-        {menuItems.map((item) => (
-          <div
-            key={item.id}
-            onClick={() => onTabChange(item.id)}
-            className={`d-flex align-items-center mb-3 cursor-pointer ${activeTab === item.id ? 'fw-bold text-primary' : ''}`}
-          >
-            <item.icon className="me-2" size={18} />
-            {item.label}
-          </div>
-        ))}
-      </div>
-      <div className="border-top pt-3">
+    <div className="bg-light border-end p-3 h-100">
+      <h4 className="fw-bold mb-4">HoloDecor Admin</h4>
+      {menuItems.map((item) => (
+        <div
+          key={item.id}
+          onClick={() => onTabChange(item.id)}
+          className={`d-flex align-items-center mb-3 ${activeTab === item.id ? 'fw-bold text-primary' : ''}`}
+          style={{ cursor: 'pointer' }}
+        >
+          <item.icon className="me-2" size={18} />
+          {item.label}
+        </div>
+      ))}
+      <div className="border-top pt-3 mt-auto">
         <div className="d-flex align-items-center text-danger cursor-pointer" onClick={onLogout}>
-          <LogOut className="me-2" size={18} />
-          Logout
+          <LogOut className="me-2" size={18} /> Logout
         </div>
       </div>
     </div>
   );
 };
 
+// --- TopBar Component ---
 const TopBar = ({ activeTab }) => {
   const map = {
     dashboard: 'Dashboard',
@@ -103,17 +87,28 @@ const TopBar = ({ activeTab }) => {
     promotion: 'Send Promotion',
     paymenthistory: 'Payment History',
     subscribers: 'Subscribers List',
-    contact: 'Contact Messages'
+    contact: 'Contact Messages',
+    notification: 'Real-Time Notification'
   };
   return (
-    <div className="d-flex justify-content-between align-items-center bg-white shadow-sm p-3">
+    <div className="bg-white shadow-sm p-3 d-flex justify-content-between align-items-center w-100">
       <h5 className="m-0">{map[activeTab] || 'Dashboard'}</h5>
       <Menu />
     </div>
   );
 };
 
-const UsersSection = () => {
+// --- AdminDashboard Component ---
+const AdminDashboard = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
+
+  const handleLogout = () => setIsAuthenticated(false);
+
+  // Import all functional sections here (UsersSection, ProductsSection, etc.)
+  // Assume they are defined exactly as in original 538-line code
+  // For brevity, they are assumed imported/defined here
+  const UsersSection = () => {
   const [users, setUsers] = useState([]);
   const [editUser, setEditUser] = useState(null);
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
@@ -498,14 +493,6 @@ const NotificationSender = () => {
   );
 };
 
-const AdminDashboard = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard');
-
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-  };
-
   const renderSection = () => {
     switch (activeTab) {
       case 'dashboard': return <DashboardSection />;
@@ -520,16 +507,20 @@ const AdminDashboard = () => {
     }
   };
 
-  if (!isAuthenticated) {
-    return <Login onLogin={() => setIsAuthenticated(true)} />;
-  }
+  if (!isAuthenticated) return <Login onLogin={() => setIsAuthenticated(true)} />;
 
   return (
-    <div className="d-flex">
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onLogout={handleLogout} />
-      <div className="flex-grow-1">
-        <TopBar activeTab={activeTab} />
-        <div className="p-4">{renderSection()}</div>
+    <div className="container-fluid">
+      <div className="row flex-nowrap min-vh-100">
+        <div className="col-12 col-md-3 col-lg-2 bg-light d-md-block d-none p-0 border-end">
+          <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onLogout={handleLogout} />
+        </div>
+        <div className="col-12 col-md-9 col-lg-10 p-0">
+          <TopBar activeTab={activeTab} />
+          <div className="p-3">
+            {renderSection()}
+          </div>
+        </div>
       </div>
     </div>
   );
