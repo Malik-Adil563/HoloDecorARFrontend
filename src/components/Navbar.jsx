@@ -70,11 +70,11 @@ const Navbar = () => {
     }
 
     try {
-      const res = await axios.put('https://ecommerce-for-holo-decor.vercel.app/change-password', {
-      email,
-      currentPassword,
-      newPassword
-    });
+      const res = await axios.post('https://ecommerce-for-holo-decor.vercel.app/change-password', {
+        email,
+        currentPassword,
+        newPassword
+      });
 
       setPasswordMessage(res.data.message);
       setCurrentPassword('');
