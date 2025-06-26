@@ -62,6 +62,7 @@ const Navbar = () => {
   };
 
   const handleChangePassword = async () => {
+    setPasswordMessage('');
     const email = localStorage.getItem('userEmail');
     if (!email) {
       setPasswordMessage('User email not found. Please login again.');
@@ -76,7 +77,6 @@ const Navbar = () => {
       });
 
       setPasswordMessage(res.data.message);
-      setShowPasswordModal(false);
       setCurrentPassword('');
       setNewPassword('');
     } catch (error) {
@@ -152,7 +152,7 @@ const Navbar = () => {
 
             {/* Cart Button */}
             <NavLink to="/cart" className="btn btn-sm btn-outline-primary me-2">
-              <i className="fa fa-cart-shopping me-1"></i>({state.length})
+              <i className="fa fa-shopping-cart me-1"></i>({state.length})
             </NavLink>
 
             {/* User Dropdown */}
@@ -167,21 +167,34 @@ const Navbar = () => {
               <ul className="dropdown-menu dropdown-menu-end">
                 {isLoginVisible ? (
                   <>
-                    <li><NavLink to="/login" className="dropdown-item">Login</NavLink></li>
-                    <li><NavLink to="/register" className="dropdown-item">Register</NavLink></li>
+                    <li>
+                      <NavLink to="/login" className="dropdown-item">
+                        <i className="fa fa-sign-in-alt me-2"></i>Login
+                      </NavLink>
+                    </li>
+                    <li>
+                      <NavLink to="/register" className="dropdown-item">
+                        <i className="fa fa-user-plus me-2"></i>Register
+                      </NavLink>
+                    </li>
                   </>
                 ) : (
                   <>
                     <li>
                       <button
                         className="dropdown-item"
-                        onClick={() => setShowPasswordModal(true)}
+                        onClick={() => {
+                          setPasswordMessage('');
+                          setShowPasswordModal(true);
+                        }}
                       >
-                        Change Password
+                        <i className="fa fa-key me-2"></i>Change Password
                       </button>
                     </li>
                     <li>
-                      <button onClick={handleLogout} className="dropdown-item">Logout</button>
+                      <button onClick={handleLogout} className="dropdown-item">
+                        <i className="fa fa-sign-out-alt me-2"></i>Logout
+                      </button>
                     </li>
                   </>
                 )}
@@ -211,10 +224,15 @@ const Navbar = () => {
                 <input
                   type="password"
                   placeholder="New Password"
-                  className="form-control"
+                  className="form-control mb-2"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                 />
+                {passwordMessage && (
+                  <div className={`alert ${passwordMessage.toLowerCase().includes('success') ? 'alert-success' : 'alert-danger'} mt-2`}>
+                    {passwordMessage}
+                  </div>
+                )}
               </div>
               <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={() => setShowPasswordModal(false)}>Cancel</button>
@@ -223,11 +241,6 @@ const Navbar = () => {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Password Change Message */}
-      {passwordMessage && (
-        <div className="alert alert-info mt-2 text-center">{passwordMessage}</div>
       )}
     </>
   );
