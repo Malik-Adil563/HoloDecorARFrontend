@@ -20,7 +20,7 @@ const Cart = () => {
     }
     else
     {
-      navigate('/login');
+      navigate('/login', { state: { from: '/checkout' } });
     }
   };
 

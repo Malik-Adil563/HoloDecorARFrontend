@@ -17,7 +17,8 @@ const Login = ({ setIsAuthenticated }) => {
         setIsAuthenticated(true);
         localStorage.setItem('authState', "loggedin");
         localStorage.setItem('userEmail', response.data.user.email);
-        navigate('/cart');
+        const redirectPath = location.state?.from || '/';
+        navigate(redirectPath);
       }
     } catch (error) {
       if (error.response) {
