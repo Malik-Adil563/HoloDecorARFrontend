@@ -8,7 +8,6 @@ import {
 
 const API = 'https://ecommerce-for-holo-decor.vercel.app';
 
-// --- Login Component ---
 const Login = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,7 +40,6 @@ const Login = ({ onLogin }) => {
   );
 };
 
-// --- Sidebar Component ---
 const Sidebar = ({ activeTab, onTabChange, onLogout }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: TrendingUp },
@@ -77,7 +75,6 @@ const Sidebar = ({ activeTab, onTabChange, onLogout }) => {
   );
 };
 
-// --- TopBar Component ---
 const TopBar = ({ activeTab, onToggleSidebar }) => {
   const map = {
     dashboard: 'Dashboard',
@@ -97,11 +94,13 @@ const TopBar = ({ activeTab, onToggleSidebar }) => {
   );
 };
 
-// --- Placeholder Section Components (reuse your existing ones) ---
 const UsersSection = () => {
   const [users, setUsers] = useState([]);
   const [editUser, setEditUser] = useState(null);
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
   useEffect(() => {
     axios.get(`${API}/getAllUsers`).then(res => setUsers(res.data)).catch(err => console.error(err));
@@ -118,6 +117,24 @@ const UsersSection = () => {
     });
   };
 
+  const openPasswordModal = (userId) => {
+    setSelectedUserId(userId);
+    setNewPassword('');
+    setShowPasswordModal(true);
+  };
+
+  const changePassword = () => {
+    axios.put(`${API}/changeUserPassword/${selectedUserId}`, { password: newPassword })
+      .then(() => {
+        alert('Password updated successfully');
+        setShowPasswordModal(false);
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Failed to update password');
+      });
+  };
+
   return (
     <>
       <table className="table">
@@ -125,13 +142,18 @@ const UsersSection = () => {
         <tbody>
           {users.map(u => (
             <tr key={u._id}>
-              <td>{u.name}</td><td>{u.email}</td><td>{u.phone}</td>
+              <td>{u.name}</td>
+              <td>{u.email}</td>
+              <td>{u.phone}</td>
               <td>
                 <Edit onClick={() => {
                   setEditUser(u);
                   setForm({ name: u.name, email: u.email, phone: u.phone });
                 }} className="text-primary me-2 cursor-pointer" />
-                <Trash2 onClick={() => deleteUser(u._id)} className="text-danger cursor-pointer" />
+
+                <Trash2 onClick={() => deleteUser(u._id)} className="text-danger me-2 cursor-pointer" />
+
+                <button className="btn btn-sm btn-warning" onClick={() => openPasswordModal(u._id)}>Change Password</button>
               </td>
             </tr>
           ))}
@@ -154,6 +176,32 @@ const UsersSection = () => {
               <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={() => setEditUser(null)}>Cancel</button>
                 <button className="btn btn-primary" onClick={updateUser}>Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPasswordModal && (
+        <div className="modal show d-block" tabIndex="-1">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Change User Password</h5>
+                <button type="button" className="btn-close" onClick={() => setShowPasswordModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <input
+                  type="password"
+                  className="form-control"
+                  placeholder="New Password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                />
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setShowPasswordModal(false)}>Cancel</button>
+                <button className="btn btn-success" onClick={changePassword}>Update Password</button>
               </div>
             </div>
           </div>
@@ -483,7 +531,6 @@ const NotificationSender = () => {
   );
 };
 
-// --- Main Component ---
 const AdminDashboard = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -510,12 +557,10 @@ const AdminDashboard = () => {
   return (
     <div className="container-fluid">
       <div className="row flex-nowrap min-vh-100">
-        {/* Desktop Sidebar */}
         <div className="col-12 col-md-3 col-lg-2 bg-light d-md-block d-none p-0 border-end">
           <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onLogout={handleLogout} />
         </div>
 
-        {/* Mobile Sidebar Overlay */}
         {showSidebar && (
           <div className="position-fixed top-0 start-0 w-75 h-100 bg-white shadow-lg z-3" style={{ zIndex: 1050 }}>
             <div className="p-3 border-bottom d-flex justify-content-between align-items-center">
@@ -536,7 +581,6 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Main Content */}
         <div className="col-12 col-md-9 col-lg-10 p-0">
           <TopBar activeTab={activeTab} onToggleSidebar={() => setShowSidebar(true)} />
           <div className="p-3">

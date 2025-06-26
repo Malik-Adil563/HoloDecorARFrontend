@@ -78,9 +78,9 @@ const Footer = () => {
             <ul className="list-unstyled">
               <li><Link to="/" className="text-decoration-none text-dark d-block mb-1">Home</Link></li>
               <li><Link to="/product" className="text-decoration-none text-dark d-block mb-1">Shop</Link></li>
-              <li><a href="#" className="text-decoration-none text-dark d-block mb-1">AR Visualization</a></li>
+              <li><Link to="product" className="text-decoration-none text-dark d-block mb-1">AR Visualization</Link></li>
               <li><Link to="/about#our-story" className="text-decoration-none text-dark d-block mb-1">Our Story</Link></li>
-              <li><a href="#" className="text-decoration-none text-dark d-block mb-1">Blog</a></li>
+              <li><Link to="/blog" className="text-decoration-none text-dark d-block mb-1">Blog</Link></li>
             </ul>
           </div>
 
