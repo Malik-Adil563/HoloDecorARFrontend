@@ -18,16 +18,18 @@ const Products = () => {
     dispatch(addCart(product));
   };
 
-  const location = useLocation(); // to read query params (optional)
+  const location = useLocation(); // To read query params (optional)
 
   // Fetch products when component mounts
   useEffect(() => {
     const getProducts = async () => {
       setLoading(true);
-      const response = await Axios.get(`https://ecommerce-for-holo-decor.vercel.app/getProducts`);
+      const response = await Axios.get(
+        `https://ecommerce-for-holo-decor.vercel.app/getProducts`
+      );
       if (componentMounted) {
         setData(response.data);
-        setFilter(response.data); // initially show all products
+        setFilter(response.data); // Initially show all products
         setLoading(false);
       }
 
@@ -39,20 +41,22 @@ const Products = () => {
     getProducts();
   }, []);
 
-  // Update the filter when category changes in the URL or by category buttons
+  // Update filter when category changes in the URL or by buttons
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const categoryFromUrl = params.get("category");
 
     if (categoryFromUrl) {
-      // Filter products based on the category from the URL
-      const filteredData = data.filter((item) => item.category === categoryFromUrl);
+      // Filter products based on the category from URL
+      const filteredData = data.filter(
+        (item) => item.category === categoryFromUrl
+      );
       setFilter(filteredData);
     } else {
       // No category, show all products
       setFilter(data);
     }
-  }, [location.search, data]); // Re-run when location.search or data changes
+  }, [location.search, data]);
 
   const Loading = () => {
     return (
@@ -86,38 +90,77 @@ const Products = () => {
     return (
       <>
         <div className="buttons text-center py-5" id="product-gallery">
-          <button className="btn btn-outline-dark btn-sm m-2" onClick={() => filterProduct("all")}>All</button>
-          <button className="btn btn-outline-dark btn-sm m-2" onClick={() => filterProduct("modern seating")}>Modern Seating</button>
-          <button className="btn btn-outline-dark btn-sm m-2" onClick={() => filterProduct("classic vintage")}>Classic Vintage</button>
-          <button className="btn btn-outline-dark btn-sm m-2" onClick={() => filterProduct("modular flexible")}>Modular Flexible</button>
+          <button
+            className="btn btn-outline-dark btn-sm m-2"
+            onClick={() => filterProduct("all")}
+          >
+            All
+          </button>
+          <button
+            className="btn btn-outline-dark btn-sm m-2"
+            onClick={() => filterProduct("modern seating")}
+          >
+            Modern Seating
+          </button>
+          <button
+            className="btn btn-outline-dark btn-sm m-2"
+            onClick={() => filterProduct("classic vintage")}
+          >
+            Classic Vintage
+          </button>
+          <button
+            className="btn btn-outline-dark btn-sm m-2"
+            onClick={() => filterProduct("modular flexible")}
+          >
+            Modular Flexible
+          </button>
         </div>
 
         {filter.map((product) => {
           return (
-            <div id={product.id} key={product.id} className="col-md-4 col-sm-6 col-xs-8 col-12 mb-4">
+            <div
+              id={product.id}
+              key={product.id}
+              className="col-md-4 col-sm-6 col-xs-8 col-12 mb-4"
+            >
               <div className="card text-center h-100" key={product.id}>
-                <img
-                  className="card-img-top p-3"
-                  src={product.image}
-                  alt="Card"
-                  height={300}
-                />
+
+                {/* Make Image Clickable */}
+                <Link to={`/product/${product.id}`}>
+                  <img
+                    className="card-img-top p-3"
+                    src={product.image}
+                    alt="Product"
+                    height={300}
+                  />
+                </Link>
+
                 <div className="card-body">
-                  <h5 className="card-title">
-                    {product.title.substring(0, 12)}...
-                  </h5>
+                  {/* Full Title (No substring) */}
+                  <h5 className="card-title">{product.title}</h5>
+
                   <p className="card-text">
                     {product.description.substring(0, 90)}...
                   </p>
                 </div>
+
                 <ul className="list-group list-group-flush">
-                  <li className="list-group-item lead">PKR {product.price}</li>
+                  <li className="list-group-item lead">
+                    PKR {product.price}
+                  </li>
                 </ul>
+
                 <div className="card-body">
-                  <Link to={"/product/" + product.id} className="btn btn-dark m-1">
+                  <Link
+                    to={`/product/${product.id}`}
+                    className="btn btn-dark m-1"
+                  >
                     Buy Now
                   </Link>
-                  <button className="btn btn-dark m-1" onClick={() => addProduct(product)}>
+                  <button
+                    className="btn btn-dark m-1"
+                    onClick={() => addProduct(product)}
+                  >
                     Add to Cart
                   </button>
                 </div>
