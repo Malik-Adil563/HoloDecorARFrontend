@@ -16,7 +16,7 @@ const Login = ({ setIsAuthenticated }) => {
         localStorage.setItem('token', response.data.token);
         setIsAuthenticated(true);
         localStorage.setItem('authState', "loggedin");
-        navigate('/');
+        navigate('/cart');
       }
     } catch (error) {
       if (error.response) {
