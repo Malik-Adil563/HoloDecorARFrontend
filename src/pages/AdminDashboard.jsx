@@ -124,15 +124,19 @@ const UsersSection = () => {
   };
 
   const changePassword = () => {
-    axios.put(`${API}/changeUserPassword/${selectedUserId}`, { password: newPassword })
-      .then(() => {
-        alert('Password updated successfully');
-        setShowPasswordModal(false);
-      })
-      .catch(err => {
-        console.error(err);
-        alert('Failed to update password');
-      });
+  axios.put(`${API}/change-password`, {
+    userId: selectedUserId,
+    newPassword,
+    isAdminChange: true
+  })
+  .then(() => {
+    alert('Password updated successfully');
+    setShowPasswordModal(false);
+  })
+  .catch(err => {
+    console.error(err);
+    alert('Failed to update password');
+  });
   };
 
   return (
