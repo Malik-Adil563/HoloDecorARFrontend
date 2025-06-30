@@ -275,7 +275,7 @@ const Checkout = () => {
 
                     <hr className="my-4" />
                     <StripeCheckout
-                      stripeKey="pk_test_51PkqswRqTY1bRAbmIoz2blAUUIEXiNYvPfMZsoY8Qt6ng7B6JBVeH2OsId8OR8SOvxqq3BcgmckMXJY3px1gEkar00iLTdGw0n"
+                      stripeKey="pk_test_51PkqswRqTY1bRAbmx26Vad6KpUhuGhTokdxyF9PIRqIvy3ryplLq11gzMKsGRBA54TxZU5zEzAZzdRAdgUFFWzZQ001TPa38jT"
                       token={makePayment}
                       name="Buy React"
                       amount={product.price * 100}
