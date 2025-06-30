@@ -3,7 +3,6 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import 'webxr-polyfill';
 import QRCode from 'react-qr-code';
-import ai_image from "../assets/picturesai_image.png";
 import './AppScene.css';
 
 const AppScene = ({ onClose, modelUrl }) => {
@@ -304,7 +303,7 @@ const AppScene = ({ onClose, modelUrl }) => {
           </div>
           <div className="modal-body">
             <img
-              src={ai_image}
+              src="/assets/pictures/ai_image.png"
               alt="Wall Guideline"
               className="img-fluid rounded mb-3"
             />
