@@ -18,14 +18,14 @@ const Checkout = () => {
     price: '',
   });
   const [paymentSuccess, setPaymentSuccess] = useState(false);
-  const navigate = useNavigate(); // Hook for navigation
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (state.length > 0) {
       const item = state[0];
       setProduct({
         name: item.title,
-        price: Math.round(item.price + 30), // item + shipping
+        price: Math.round(item.price + 30), 
       });
     }
   }, [state]);
@@ -61,8 +61,8 @@ const Checkout = () => {
           dispatch(delCart(item));
         }
         setTimeout(() => {
-          navigate('/'); // Redirect to homepage
-        }, 2000); // Delay for 2 seconds
+          navigate('/'); 
+        }, 2000);
       } else {
         alert("Payment failed: " + data.error);
       }
@@ -108,18 +108,18 @@ const Checkout = () => {
                   <ul className="list-group list-group-flush">
                     <li className="list-group-item d-flex justify-content-between align-items-center border-0 px-0 pb-0">
                       Products ({totalItems})
-                      <span>${Math.round(subtotal)}</span>
+                      <span>PKR{Math.round(subtotal)}</span>
                     </li>
                     <li className="list-group-item d-flex justify-content-between align-items-center px-0">
                       Shipping
-                      <span>${shipping}</span>
+                      <span>PKR{shipping}</span>
                     </li>
                     <li className="list-group-item d-flex justify-content-between align-items-center border-0 px-0 mb-3">
                       <div>
                         <strong>Total amount</strong>
                       </div>
                       <span>
-                        <strong>${Math.round(subtotal + shipping)}</strong>
+                        <strong>PKR{Math.round(subtotal + shipping)}</strong>
                       </span>
                     </li>
                   </ul>
@@ -275,7 +275,7 @@ const Checkout = () => {
 
                     <hr className="my-4" />
                     <StripeCheckout
-                      stripeKey="pk_test_51PkqswRqTY1bRAbmPThluLXuHOwwikTqGFmBV1R4KU7NH0Kk5ia6cw0IxqGPxT3yP5bI8ymfTKOqRCQmqtLPRRHf00bNsIn8aZ"
+                      stripeKey="pk_test_51PkqswRqTY1bRAbmIoz2blAUUIEXiNYvPfMZsoY8Qt6ng7B6JBVeH2OsId8OR8SOvxqq3BcgmckMXJY3px1gEkar00iLTdGw0n"
                       token={makePayment}
                       name="Buy React"
                       amount={product.price * 100}
