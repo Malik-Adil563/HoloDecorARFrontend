@@ -30,6 +30,14 @@ const Checkout = () => {
     }
   }, [state]);
 
+  const validateForm = () => {
+  if (!firstName || !lastName || !email || !address || !country || !state) {
+    alert("Please fill in all required fields before continuing.");
+    return false;
+  }
+  return true;
+  };
+
   const makePayment = async (token) => {
     const body = {
       token,
@@ -264,7 +272,7 @@ const Checkout = () => {
                           type="text"
                           className="form-control"
                           id="zip"
-                          placeholder=""
+                          placeholder="ZIP"
                           required
                         />
                         <div className="invalid-feedback">
@@ -276,7 +284,11 @@ const Checkout = () => {
                     <hr className="my-4" />
                     <StripeCheckout
                       stripeKey="pk_test_51PkqswRqTY1bRAbmx26Vad6KpUhuGhTokdxyF9PIRqIvy3ryplLq11gzMKsGRBA54TxZU5zEzAZzdRAdgUFFWzZQ001TPa38jT"
-                      token={makePayment}
+                      token={(token) => {
+                        if (validateForm()) {
+                          makePayment(token);
+                        }
+                      }}
                       name="Buy React"
                       amount={product.price * 100}
                       currency="PKR"
