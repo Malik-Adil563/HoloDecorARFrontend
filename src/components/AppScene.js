@@ -15,6 +15,7 @@ const AppScene = ({ onClose, modelUrl }) => {
   const [showUnsupportedModal, setShowUnsupportedModal] = useState(false);
   const [unsupportedType, setUnsupportedType] = useState('');
   const [deviceType, setDeviceType] = useState('');
+  const [showGuideline, setShowGuideline] = useState(false);
 
   let camera, scene, renderer, controller, model, hitTestSource = null;
   let reticle;
@@ -39,7 +40,7 @@ const AppScene = ({ onClose, modelUrl }) => {
       setUnsupportedType(type);
       setShowUnsupportedModal(true);
     } else {
-      startSimpleCameraAndDetect();
+      setShowGuideline(true);
     }
   };
 
@@ -180,7 +181,7 @@ const AppScene = ({ onClose, modelUrl }) => {
       (gltf) => {
         model = gltf.scene;
         model.scale.set(1.27, 0.9144, 0.76);
-        model.visible = false; // Place on select only
+        model.visible = false;
         scene.add(model);
         setMessage("✅ Tap on surface to place model.");
       },
@@ -290,9 +291,43 @@ const AppScene = ({ onClose, modelUrl }) => {
     );
   };
 
+  const renderGuidelineModal = () => {
+  if (!showGuideline) return null;
+
+  return (
+    <div className="modal d-block bg-dark bg-opacity-75" tabIndex="-1">
+      <div className="modal-dialog modal-dialog-centered modal-lg">
+        <div className="modal-content text-center">
+          <div className="modal-header">
+            <h5 className="modal-title w-100">How to Use AR Feature</h5>
+          </div>
+          <div className="modal-body">
+            <img
+              src="/mnt/data/Malik_Adil_A_close-up,_realistic_photograph_of_the_lower_part_of_an_indoor_w_720713c9-79ed-4af0-9aaa-6cd4d80c52a0 (1).png"
+              alt="Wall Guideline"
+              className="img-fluid rounded mb-3"
+            />
+            <p className="text-start">
+              ✅ Hold your phone’s camera steady in landscape mode towards an empty wall like shown above.<br /><br />
+              ✅ Make sure the lighting is good and avoid cluttered backgrounds.<br /><br />
+              ❌ Avoid pointing the camera towards the floor, ceiling, or furniture.<br /><br />
+              When the system detects a wall, the AR session will begin. Tap on the surface to place the model.<br />
+              Model loading depends on your internet speed. If model doesn't appear after Tap, then wait for some time.
+            </p>
+          </div>
+          <div className="modal-footer justify-content-center">
+            <button className="btn btn-primary px-4" onClick={() => { setShowGuideline(false); startSimpleCameraAndDetect(); }}>
+              Got it
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
   return (
     <div ref={containerRef} style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
-      {!arReady && showPopup && !showUnsupportedModal && (
+      {!arReady && showPopup && !showUnsupportedModal && !showGuideline && (
         <div className="camera-modal">
           <div className="camera-header">
             <button onClick={onClose} className="cancel-button">✕</button>
@@ -302,6 +337,7 @@ const AppScene = ({ onClose, modelUrl }) => {
         </div>
       )}
       {renderUnsupportedModal()}
+      {renderGuidelineModal()}
     </div>
   );
 };
