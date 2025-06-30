@@ -31,7 +31,7 @@ const Checkout = () => {
   }, [state]);
 
   const validateForm = () => {
-  if (!firstName || !lastName || !email || !address || !country || !state) {
+  if (!firstName || !lastName || !email || !address || !country) {
     alert("Please fill in all required fields before continuing.");
     return false;
   }
