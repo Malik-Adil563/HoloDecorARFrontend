@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import 'webxr-polyfill';
 import QRCode from 'react-qr-code';
+import ai_image from "../assets/picturesai_image.png";
 import './AppScene.css';
 
 const AppScene = ({ onClose, modelUrl }) => {
@@ -303,7 +304,7 @@ const AppScene = ({ onClose, modelUrl }) => {
           </div>
           <div className="modal-body">
             <img
-              src="/mnt/data/Malik_Adil_A_close-up,_realistic_photograph_of_the_lower_part_of_an_indoor_w_720713c9-79ed-4af0-9aaa-6cd4d80c52a0 (1).png"
+              src={ai_image}
               alt="Wall Guideline"
               className="img-fluid rounded mb-3"
             />
@@ -311,7 +312,7 @@ const AppScene = ({ onClose, modelUrl }) => {
               ✅ Hold your phone’s camera steady in landscape mode towards an empty wall like shown above.<br /><br />
               ✅ Make sure the lighting is good and avoid cluttered backgrounds.<br /><br />
               ❌ Avoid pointing the camera towards the floor, ceiling, or furniture.<br /><br />
-              When the system detects a wall, the AR session will begin. Tap on the surface to place the model.<br />
+              When the system detects a wall, the AR session will begin. Tap on the surface to place the model.<br /><br />
               Model loading depends on your internet speed. If model doesn't appear after Tap, then wait for some time.
             </p>
           </div>
