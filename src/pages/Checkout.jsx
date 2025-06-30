@@ -8,11 +8,14 @@ import { delCart } from "../redux/action";
 const Checkout = () => {
   const state = useSelector((state) => state.handleCart);
   const dispatch = useDispatch();
+  const stripeBtnRef = React.useRef(null);
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [address, setAddress] = useState('');
   const [country, setCountry] = useState('');
+  const [zip, setZip] = useState('');
+  const [stateReg, setStateReg] = useState('');
   const [product, setProduct] = useState({
     name: '',
     price: '',
@@ -31,7 +34,7 @@ const Checkout = () => {
   }, [state]);
 
   const validateForm = () => {
-  if (!firstName || !lastName || !email || !address || !country) {
+  if (!firstName || !lastName || !email || !address || !country || !stateReg || !zip) {
     alert("Please fill in all required fields before continuing.");
     return false;
   }
@@ -251,7 +254,7 @@ const Checkout = () => {
                           State
                         </label>
                         <br />
-                        <select className="form-select" id="state" required>
+                        <select className="form-select" id="state" required value={stateReg} onChange={(e) => setStateReg(e.target.value)}>
                           <option value="">Choose...</option>
                           <option>Punjab</option>
                           <option>Sindh</option>
@@ -272,6 +275,8 @@ const Checkout = () => {
                           type="text"
                           className="form-control"
                           id="zip"
+                          value={zip}
+                          onChange={(e) => setZip(e.target.value)}
                           placeholder="ZIP"
                           required
                         />
@@ -282,20 +287,30 @@ const Checkout = () => {
                     </div>
 
                     <hr className="my-4" />
-                    <StripeCheckout
-                      stripeKey="pk_test_51PkqswRqTY1bRAbmx26Vad6KpUhuGhTokdxyF9PIRqIvy3ryplLq11gzMKsGRBA54TxZU5zEzAZzdRAdgUFFWzZQ001TPa38jT"
-                      token={(token) => {
+                    <button
+                      type="button"
+                      className="w-100 btn btn-primary"
+                      onClick={() => {
                         if (validateForm()) {
-                          makePayment(token);
+                          document.getElementById("stripe-hidden-btn").click();
                         }
                       }}
-                      name="Buy React"
+                    >
+                      Continue to checkout
+                    </button>
+                    <StripeCheckout
+                      stripeKey="pk_test_51PkqswRqTY1bRAbmx26Vad6KpUhuGhTokdxyF9PIRqIvy3ryplLq11gzMKsGRBA54TxZU5zEzAZzdRAdgUFFWzZQ001TPa38jT"
+                      token={makePayment}
+                      name="HoloDecor Checkout"
                       amount={product.price * 100}
                       currency="PKR"
                     >
-                      <button type="button" className="w-100 btn btn-primary">
-                        Continue to checkout
-                      </button>
+                    <button
+                      type="button"
+                      ref={stripeBtnRef}
+                      style={{ display: "none" }}
+                      id="stripe-hidden-btn"
+                    />
                     </StripeCheckout>
                   </form>
                 </div>
